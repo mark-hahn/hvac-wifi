@@ -12,14 +12,14 @@ char password[] = DEF_PASSWORD;
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
 
-// void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
-//   AwsFrameInfo *info = (AwsFrameInfo*) arg;
-//   if (info->final && info->index == 0 && info->len == len 
-//                   && info->opcode == WS_TEXT) {
-//     data[len] = 0;
-//     prtl((char*)data);
-//   }
-// }
+void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
+  AwsFrameInfo *info = (AwsFrameInfo*) arg;
+  if (info->final && info->index == 0 && info->len == len 
+                  && info->opcode == WS_TEXT) {
+    data[len] = 0;
+    prtl((char*)data);
+  }
+}
 
 void eventHandler(AsyncWebSocket *server, 
                   AsyncWebSocketClient *client, AwsEventType type, 
@@ -33,8 +33,8 @@ void eventHandler(AsyncWebSocket *server,
       Serial.printf("WebSocket client #%u disconnected\n", client->id());
       break;
     case WS_EVT_DATA:
-      // handleWebSocketMessage(arg, data, len);
-      prtl("WS_EVT_DATA");
+      prtl("\ngot WS_EVT_DATA");
+      handleWebSocketMessage(arg, data, len);
       break;
     case WS_EVT_PONG:
     case WS_EVT_ERROR:
@@ -44,10 +44,6 @@ void eventHandler(AsyncWebSocket *server,
       break;
   }
 }
-
-const char index_html[] PROGMEM = R"rawliteral(
-Hello Browser
-)rawliteral";
 
 void wifiSetup() {
   WiFi.begin(ssid, password);
