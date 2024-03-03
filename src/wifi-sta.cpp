@@ -3,6 +3,7 @@
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 
+#include "hvac.h"
 #include "main.h"
 #include "wifi-sta.h"
 
@@ -12,12 +13,16 @@ char password[] = DEF_PASSWORD;
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
 
-void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
+void wsSend(const char * message) {
+  ws.textAll(message);
+}
+
+void recvMsg(void *arg, u8 *data, size_t len) {
   AwsFrameInfo *info = (AwsFrameInfo*) arg;
   if (info->final && info->index == 0 && info->len == len 
                   && info->opcode == WS_TEXT) {
     data[len] = 0;
-    prtl((char*)data);
+    hvacRecv(data);
   }
 }
 
@@ -27,14 +32,15 @@ void eventHandler(AsyncWebSocket *server,
   switch (type) {
     case WS_EVT_CONNECT:
       Serial.printf("WebSocket client #%u connected from %s\n", 
-                    client->id(), client->remoteIP().toString().c_str());
+                    client->id(), 
+                    client->remoteIP().toString().c_str());
       break;
     case WS_EVT_DISCONNECT:
       Serial.printf("WebSocket client #%u disconnected\n", client->id());
       break;
     case WS_EVT_DATA:
       prtl("\ngot WS_EVT_DATA");
-      handleWebSocketMessage(arg, data, len);
+      recvMsg(arg, data, len);
       break;
     case WS_EVT_PONG:
     case WS_EVT_ERROR:

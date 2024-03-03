@@ -1,8 +1,8 @@
 #include "Arduino.h"
 
 #include "main.h"
-#include "pins.h"
 #include "wifi-sta.h"
+#include "hvac.h"
 
 void setup() {
 #ifdef USE_SERIAL
@@ -14,12 +14,12 @@ void setup() {
 #endif
 
   wifiSetup();
+  hvacSetup();
 
   prtfl("\nAll setup complete, millis: %d\n", millis());
 }
 
 void loop() {
-
   wifiLoop();
-  
+  hvacLoop();
 }
