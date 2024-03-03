@@ -1,15 +1,61 @@
 #include "Arduino.h"
 #include <WiFi.h>
-#include <HTTPClient.h>
+#include <AsyncTCP.h>
+#include <ESPAsyncWebServer.h>
+
 #include "main.h"
 #include "wifi-sta.h"
 
 char ssid[]     = DEF_SSID;
 char password[] = DEF_PASSWORD;
 
+AsyncWebServer server(80);
+AsyncWebSocket ws("/ws");
+
+// void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
+//   AwsFrameInfo *info = (AwsFrameInfo*) arg;
+//   if (info->final && info->index == 0 && info->len == len 
+//                   && info->opcode == WS_TEXT) {
+//     data[len] = 0;
+//     prtl((char*)data);
+//   }
+// }
+
+void eventHandler(AsyncWebSocket *server, 
+                  AsyncWebSocketClient *client, AwsEventType type, 
+                  void *arg, uint8_t *data, size_t len) {
+  switch (type) {
+    case WS_EVT_CONNECT:
+      Serial.printf("WebSocket client #%u connected from %s\n", 
+                    client->id(), client->remoteIP().toString().c_str());
+      break;
+    case WS_EVT_DISCONNECT:
+      Serial.printf("WebSocket client #%u disconnected\n", client->id());
+      break;
+    case WS_EVT_DATA:
+      // handleWebSocketMessage(arg, data, len);
+      prtl("WS_EVT_DATA");
+      break;
+    case WS_EVT_PONG:
+    case WS_EVT_ERROR:
+      break;
+    default:
+      prtfl("%s %d", "WS_EVT_UNKNOWN", (int) type);
+      break;
+  }
+}
+
+const char index_html[] PROGMEM = R"rawliteral(
+Hello Browser
+)rawliteral";
+
 void wifiSetup() {
-  prtf("Using SSID: %s, Password: %s\n", ssid, password);  
   WiFi.begin(ssid, password);
+
+  ws.onEvent(eventHandler);
+  server.addHandler(&ws);
+  
+  server.begin();
 }
 
 void wifiLoop() {
@@ -34,4 +80,6 @@ void wifiLoop() {
       prtl(WiFi.localIP());
     }
   }
+
+  ws.cleanupClients();
 }
