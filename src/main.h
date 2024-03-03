@@ -20,10 +20,6 @@ typedef int64_t  i64;
 
 
 /*
-  boot, telnet on, stream on chrome: worked
-  boot, telnet on, stream on phone: "didn’t send any data" -- then chrome said same
-  boot, telnet on, app on chrome: "net::ERR_EMPTY_RESPONSE"
-
   ota, telnet, and stream work together
   sometimes cannot ota while telnet open
   closing telnet kills ota
@@ -92,13 +88,5 @@ typedef int64_t  i64;
                       while(false)
 #endif // USE_SERIAL
 #endif // PRINTING
-
-#define flashOn()  digitalWrite(FLASH_GPIO_NUM, HIGH)
-#define flashOff() digitalWrite(FLASH_GPIO_NUM, LOW)
-
-#define cameraOn()  digitalWrite(PWDN_GPIO_NUM, LOW)
-#define cameraOff() digitalWrite(PWDN_GPIO_NUM, HIGH)
-
-#define disableBrownout() WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0)
 
 #endif // MAIN_H
