@@ -8,8 +8,8 @@
 
 u8  pressPin   = 0;
 u8  pressCount = 0;
-u32 lastBtnToggle[MAX_PIN] = {0};
-u8  lastPinHigh[MAX_PIN]   = {255};
+u8  lastPinLvl[MAX_PIN]    = {255};
+u32 btnToggleTime[MAX_PIN] = {0};
 
 const u8* pinToName(u8 pin){
   switch(pin){
@@ -55,7 +55,7 @@ u8 nameToPin(const u8 *name) {
   else if (strcmp((const char *) name, "y2"     ) == 0) 
         return PIN_Y2;
   else {
-    prtfl("nameToPin unknown pin %s", name);  
+    prtfl("nameToPin unknown name %s", name);  
     return 0;
   }
 }
@@ -69,26 +69,25 @@ void hvacRecv(const u8 *data) {
   pinMode(pressPin, OUTPUT);
 }
 
-
 void chkPin(u8 pin) {
-  u8 pinHigh = digitalRead(pin);
-  if(lastPinHigh[pin] != pinHigh) {
+  u8 pinLvl = digitalRead(pin);
+  if(lastPinLvl[pin] != pinLvl) {
+    lastPinLvl[pin] = pinLvl;
     const u8 *name = pinToName(pin);
-    lastPinHigh[pin] = pinHigh;
     prtfl("pin %s changed to %s", 
-            name, pinHigh ? "high" : "low");
+            name, pinLvl ? "high" : "low");
     char msg[16];
-    sprintf(msg, "%s %d", name, pinHigh);
+    sprintf(msg, "%s %d", name, pinLvl);
     wsSend((const char *) msg);
   }
 }
 
 void chkBtn(u8 pin) {
-  u8 pinHigh  = digitalRead(pin);
-  u8 lastHigh = lastPinHigh[pin];
-  if(lastHigh != pinHigh) {
-    lastPinHigh[pin] = pinHigh;
-    if(lastHigh == 255) {
+  u8 pinLvl  = digitalRead(pin);
+  u8 lastLvl = lastPinLvl[pin];
+  if(lastLvl != pinLvl) {
+    lastPinLvl[pin] = pinLvl;
+    if(lastLvl == 255) {
       const u8 *name = pinToName(pin);
       prtfl("btn %s pressed", name);
       char msg[32];
@@ -96,12 +95,12 @@ void chkBtn(u8 pin) {
       wsSend((const char *) msg);
       return;
     }
-    lastBtnToggle[pin] = millis();
+    btnToggleTime[pin] = millis();
   }
-  else if(lastPinHigh[pin] != 255 &&
-          millis() - lastBtnToggle[pin] > BTN_TIMEOUT) {
-    lastBtnToggle[pin] = 0;
-    lastPinHigh[pin]   = 255;
+  else if(lastPinLvl[pin] != 255 &&
+          millis() - btnToggleTime[pin] > BTN_TIMEOUT) {
+    lastPinLvl[pin]    = 255;
+    btnToggleTime[pin] = 0;
     prtfl("btn %s released", pinToName(pin));
   }
 }
@@ -123,24 +122,18 @@ void hvacSetup() {
 }
 
 void hvacLoop() {
-  static u32 lastToggle = 0;
+  static u32 pressToggleTime = 0;
   if (pressPin) {
-    if (millis() - lastToggle > 30) {
-
+    if (millis() - pressToggleTime > 30) {
       pressCount++;
-      if (pressCount %2 == 0)
-        digitalWrite(pressPin, LOW);
-      else
-        digitalWrite(pressPin, HIGH);
-
+      digitalWrite(pressPin, pressCount %2);
       if(pressCount > NUM_PRESS_30MS) {
         prtfl("done pressing %s", pinToName(pressPin));
         digitalWrite(pressPin, LOW);
         pinMode(pressPin, INPUT);
         pressPin = 0;
       }
-
-      lastToggle = millis();
+      pressToggleTime = millis();
     }
   }
   // don't check pins when pressing a button
