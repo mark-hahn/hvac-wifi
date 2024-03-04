@@ -5,7 +5,7 @@
 
 #define BTN_PRESS_LOW_MS  20   // 20ms
 #define BTN_PRESS_HIGH_MS 40   // 40ms
-#define BTN_EDGE_COUNT    30   // 30 * 33ms = 1s
+#define BTN_EDGE_COUNT    29   // 30 * 33ms = 1s
 #define BTN_TIME_MS      500   // 500ms
 
 void wsRecv(const u8 *data);

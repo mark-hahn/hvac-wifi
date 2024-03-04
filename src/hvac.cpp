@@ -8,11 +8,11 @@
 
 #define UNKNOWN_LVL 255
 
-u8   pressPin   = 0;
+u8   pressPin  = 0;
 u8   edgeCount = 0;
-u8   lastPinLvl   [MAX_PIN+1] = {UNKNOWN_LVL};
+u8   lastPinLvl [MAX_PIN+1] = {UNKNOWN_LVL};
 u32  btnEdgeTime[MAX_PIN+1] = {0};
-bool pressing     [MAX_PIN+1] = {false};
+bool pressing   [MAX_PIN+1] = {false};
 
 const u8* pinToName(u8 pin){
   switch(pin){
@@ -33,6 +33,7 @@ const u8* pinToName(u8 pin){
 }
 
 u8 nameToPin(const u8 *name) {
+  // prtfl("nameToPin %s", name);
   if (!strcmp((const char*)    name, "query")) return QUERY_CMD;
   else if(!strcmp((const char*)name, "fan"  )) return PIN_FAN;
   else if(!strcmp((const char*)name, "heat" )) return PIN_HEAT;
@@ -47,14 +48,14 @@ u8 nameToPin(const u8 *name) {
   else if(!strcmp((const char*)name, "Y1"   )) return PIN_Y1;
   else if(!strcmp((const char*)name, "Y2"   )) return PIN_Y2;
   else {
-    prtfl("nameToPin unknown name %s", name);  
+    prtfl("nameToPin unknown name: '%s'", name);  
     return 0;
   }
 }
 
 // cmd is setb, up, down, hold, or query
 void wsRecv(const u8 *data) {
-  prtfl("wsRecv %s", data);
+  prtfl("wsRecv: '%s'", data);
   pressPin = nameToPin(data);
   if (!pressPin) return;
 
@@ -62,9 +63,12 @@ void wsRecv(const u8 *data) {
     // reset lastPinLvl so all pins reported
     for (u8 i = 0; i <= MAX_PIN; i++)
       lastPinLvl[i] = UNKNOWN_LVL;
+    pressPin = 0;
     return;
   }
+
   // start pressing button setb, up, down, or hold
+  prtfl("press cmd: %s", data);
   edgeCount = 0;
   digitalWrite(pressPin, LOW);
   pinMode(pressPin, OUTPUT);
@@ -79,8 +83,7 @@ void chkPin(u8 pin) {
   if(pinLvl != lastPinLvl[pin]) {
     lastPinLvl[pin] = pinLvl;
     const u8 *name = pinToName(pin);
-    prtfl("pin %s is %s", 
-            name, pinLvl ? "high" : "low");
+    prtfl("pin %5s is %s", name, pinLvl ? "high" : "low");
     char msg[16];
     sprintf(msg, "%s %d", name, pinLvl);
     wsSend((const char*) msg);
@@ -96,36 +99,42 @@ void chkBtn(u8 pin) {
   }
   u8 pinLvl = digitalRead(pin);
   if(lastPinLvl[pin] && !pinLvl) {
+    if(lastPinLvl[pin] == UNKNOWN_LVL) {
+      lastPinLvl[pin] = pinLvl;
+      return;
+    }
     // falling edge
     if(!pressing[pin]) {
+      pressing[pin]    = true;
       const u8 *name = pinToName(pin);
-      prtfl("%s pressed", name);
-      char msg[32];
-      sprintf(msg, "%5s pressed", name);
+      prtfl("pressing %5s", name);
+      char msg[64];
+      sprintf(msg, "%s pressed", name);
       wsSend((const char*) msg);
       btnEdgeTime[pin] = millis();
-      pressing[pin]    = true;
     }
   }
   else if(pressing[pin] &&
           millis() - btnEdgeTime[pin] > BTN_TIME_MS) {
-    lastPinLvl[pin]    = UNKNOWN_LVL;
+    lastPinLvl[pin]  = UNKNOWN_LVL;
     btnEdgeTime[pin] = 0;
     pressing[pin] = false;
-    prtfl("%5s released", pinToName(pin));
+    prtfl("releasing %5s", pinToName(pin));
     return;
   }
   lastPinLvl[pin] = pinLvl;
 }
 
 void hvacSetup() {
-  pinMode(PIN_FAN,  INPUT);
-  pinMode(PIN_HEAT, INPUT);
-  pinMode(PIN_COOL, INPUT);
-  pinMode(PIN_SETB, INPUT);
-  pinMode(PIN_UP,   INPUT);
-  pinMode(PIN_DOWN, INPUT);
-  pinMode(PIN_HOLD, INPUT);
+  pinMode(PIN_FAN,  INPUT_PULLUP);
+  pinMode(PIN_HEAT, INPUT_PULLUP);
+  pinMode(PIN_COOL, INPUT_PULLUP);
+
+  pinMode(PIN_SETB, INPUT_PULLDOWN);
+  pinMode(PIN_UP,   INPUT_PULLDOWN);
+  pinMode(PIN_DOWN, INPUT_PULLDOWN);
+  pinMode(PIN_HOLD, INPUT_PULLDOWN);
+
   pinMode(PIN_G,    INPUT);
   pinMode(PIN_W1,   INPUT);
   pinMode(PIN_W2,   INPUT);
@@ -140,11 +149,15 @@ void hvacLoop() {
     if (millis() - pulseTimeMs > 
         (edgeCount % 2 ? BTN_PRESS_HIGH_MS : BTN_PRESS_LOW_MS)) {
       edgeCount++;
+      prtl(edgeCount % 2 ? "pressing rising edge" : "pressing falling edge");
       digitalWrite(pressPin, edgeCount % 2);
       if(edgeCount > BTN_EDGE_COUNT) {
+        prtl("done pressing");
+        prtl("done pressing");
+        prtl("done pressing");
         prtfl("done pressing %s", pinToName(pressPin));
         digitalWrite(pressPin, LOW);
-        pinMode(pressPin, INPUT);
+        pinMode(pressPin, INPUT_PULLDOWN);
         pressPin = 0;
       }
       pulseTimeMs = millis();
