@@ -1,6 +1,8 @@
 #ifndef PINS_H
 #define PINS_H
 
+#define QUERY_CMD 1
+
 #define PIN_FAN  13
 #define PIN_HEAT 32
 #define PIN_COOL 33
@@ -15,6 +17,6 @@
 #define PIN_Y1   17
 #define PIN_Y2   16
 
-#define MAX_PIN  34
+#define MAX_PIN  33
 
 #endif // PINS_H

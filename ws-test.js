@@ -4,8 +4,7 @@ const ws = new WebSocket('ws://192.168.1.76:80/ws');
 
 ws.on('open', () => {
   console.log('Connected to WebSocket server');
-  
-  ws.send('hello from node');
+  ws.send('hello');
 });
 
 ws.on('message', (data) => {
@@ -18,6 +17,5 @@ ws.on('close', () => {
 
 ws.on('error', (error) => {
   console.error('WebSocket error:', error);
-
 });
 

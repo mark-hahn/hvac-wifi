@@ -3,10 +3,12 @@
 
 #include "main.h"
 
-#define BTN_TIMEOUT 500   // 500ms
-#define NUM_PRESS_30MS 33 // 33 * 30ms = 1s
+#define BTN_PRESS_LOW_MS  20   // 20ms
+#define BTN_PRESS_HIGH_MS 40   // 40ms
+#define BTN_EDGE_COUNT    30   // 30 * 33ms = 1s
+#define BTN_TIME_MS      500   // 500ms
 
-void hvacRecv(const u8 *data);
+void wsRecv(const u8 *data);
 
 void hvacSetup();
 void hvacLoop();
