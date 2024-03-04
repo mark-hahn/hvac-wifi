@@ -7,6 +7,8 @@
 #include "main.h"
 #include "wifi-sta.h"
 
+bool wifiConnected = false;
+
 char ssid[]     = DEF_SSID;
 char password[] = DEF_PASSWORD;
 
@@ -39,7 +41,6 @@ void eventHandler(AsyncWebSocket *server,
       Serial.printf("WebSocket client #%u disconnected\n", client->id());
       break;
     case WS_EVT_DATA:
-      prtl("\ngot WS_EVT_DATA");
       recvMsg(arg, data, len);
       break;
     case WS_EVT_PONG:
@@ -62,7 +63,6 @@ void wifiSetup() {
 
 void wifiLoop() {
   static u32 lastMillis = 0;
-  static bool wifiConnected = false;
   if (WiFi.status() != WL_CONNECTED) {
     if(wifiConnected) {
       wifiConnected = false;

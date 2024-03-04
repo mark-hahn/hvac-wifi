@@ -6,10 +6,11 @@
 #include "hvac.h"
 #include "pins.h"
 
-u8  pressPin   = 0;
-u8  pressCount = 0;
-u8  lastPinLvl[MAX_PIN]    = {255};
-u32 btnToggleTime[MAX_PIN] = {0};
+u8   pressPin   = 0;
+u8   pressCount = 0;
+u8   lastPinLvl[MAX_PIN]    = {255};
+u32  btnToggleTime[MAX_PIN] = {0};
+bool pressing[MAX_PIN]      = {false};
 
 const u8* pinToName(u8 pin){
   switch(pin){
@@ -70,11 +71,17 @@ void hvacRecv(const u8 *data) {
 }
 
 void chkPin(u8 pin) {
-  u8 pinLvl = digitalRead(pin);
-  if(lastPinLvl[pin] != pinLvl) {
+  if(!wifiConnected) {
+    lastPinLvl[pin] = 255;
+    return;
+  }
+  u8 pinLvl  = digitalRead(pin);
+  u8 lastLvl = lastPinLvl[pin];
+  if(lastLvl != pinLvl) {
     lastPinLvl[pin] = pinLvl;
+    if(lastLvl == 255) return;
     const u8 *name = pinToName(pin);
-    prtfl("pin %s changed to %s", 
+    prtfl("pin %s is %s", 
             name, pinLvl ? "high" : "low");
     char msg[16];
     sprintf(msg, "%s %d", name, pinLvl);
@@ -83,26 +90,35 @@ void chkPin(u8 pin) {
 }
 
 void chkBtn(u8 pin) {
+  if(!wifiConnected) {
+    lastPinLvl[pin]    = 255;
+    btnToggleTime[pin] = 0;
+    pressing[pin] = false;
+    return;
+  }
   u8 pinLvl  = digitalRead(pin);
   u8 lastLvl = lastPinLvl[pin];
-  if(lastLvl != pinLvl) {
-    lastPinLvl[pin] = pinLvl;
-    if(lastLvl == 255) {
+  if(!lastLvl && pinLvl) {
+    // rising edge
+    if(!pressing[pin]) {
       const u8 *name = pinToName(pin);
-      prtfl("btn %s pressed", name);
+      prtfl("%s pressed", name);
       char msg[32];
-      sprintf(msg, "%s pressed", name);
+      sprintf(msg, "%5s pressed", name);
       wsSend((const char *) msg);
-      return;
+      btnToggleTime[pin] = millis();
+      pressing[pin]      = true;
     }
-    btnToggleTime[pin] = millis();
   }
-  else if(lastPinLvl[pin] != 255 &&
+  else if(pressing[pin] &&
           millis() - btnToggleTime[pin] > BTN_TIMEOUT) {
     lastPinLvl[pin]    = 255;
     btnToggleTime[pin] = 0;
-    prtfl("btn %s released", pinToName(pin));
+    pressing[pin] = false;
+    prtfl("%5s released", pinToName(pin));
+    return;
   }
+  lastPinLvl[pin] = pinLvl;
 }
 
 void hvacSetup() {

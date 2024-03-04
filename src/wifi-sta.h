@@ -5,6 +5,8 @@
 #define DEF_PASSWORD "90-NBVcvbasd"
 // 192.168.1.76
 
+extern bool wifiConnected;
+ 
 void wsSend(const char *message);
 
 void wifiSetup();
