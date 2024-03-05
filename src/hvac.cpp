@@ -11,8 +11,6 @@
 u8   simuPressPin = 0;
 u8   simEdgeCount = 0;
 u8   lastPinLvl    [MAX_PIN+1] = {UNKNOWN_LVL};
-u32  phyBtnEdgeTime[MAX_PIN+1] = {0};
-bool phyPressing   [MAX_PIN+1] = {false};
 
 const u8* pinToName(u8 pin){
   switch(pin){
@@ -92,38 +90,31 @@ void chkPinChg(u8 pin) {
 }
 
 void chkBtnPress(u8 pin) {
+  static bool phyPressing [MAX_PIN+1] = {false};
+  static u32  phyBtnLastHi[MAX_PIN+1] = {0};
   if(!wifiConnected) {
-    lastPinLvl[pin]  = UNKNOWN_LVL;
-    phyBtnEdgeTime[pin] = 0;
-    phyPressing[pin]    = false;
+    phyPressing[pin] = false;
     return;
   }
-  u8 pinLvl = digitalRead(pin);
-  if(lastPinLvl[pin] && !pinLvl) {
-    if(lastPinLvl[pin] == UNKNOWN_LVL) {
-      lastPinLvl[pin] = pinLvl;
-      return;
-    }
-    // falling edge
+  if(digitalRead(pin)) { // btn high
     if(!phyPressing[pin]) {
-      phyPressing[pin]  = true;
+      phyPressing[pin] = true;
       const u8 *name = pinToName(pin);
-      prtfl("physical button down: %4s", name);
+      prtfl("%4s high", name);
       char msg[64];
       sprintf(msg, "%s pressed", name);
       wsSend((const char*) msg);
-      phyBtnEdgeTime[pin] = millis();
+    }
+    phyBtnLastHi[pin] = millis();
+  }
+  else {  // btn low
+    if(phyPressing[pin] &&
+        millis() - phyBtnLastHi[pin] > PHY_BTN_TIMEOUT_MS) {
+      phyPressing[pin]  = false;
+      prtfl("%4s timeout", pinToName(pin));
+      return;
     }
   }
-  else if(phyPressing[pin] &&
-          millis() - phyBtnEdgeTime[pin] > PHY_BTN_TIMEOUT_MS) {
-    lastPinLvl[pin]     = UNKNOWN_LVL;
-    phyBtnEdgeTime[pin] = 0;
-    phyPressing[pin]    = false;
-    prtfl("physical button up:   %4s", pinToName(pin));
-    return;
-  }
-  lastPinLvl[pin] = pinLvl;
 }
 
 void hvacSetup() {
