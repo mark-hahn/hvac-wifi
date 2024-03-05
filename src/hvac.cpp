@@ -9,7 +9,7 @@
 #define UNKNOWN_LVL 255
 
 u8   simuPressPin = 0;
-u8   edgeOutCount = 0;
+u8   simEdgeCount = 0;
 u8   lastPinLvl    [MAX_PIN+1] = {UNKNOWN_LVL};
 u32  phyBtnEdgeTime[MAX_PIN+1] = {0};
 bool phyPressing   [MAX_PIN+1] = {false};
@@ -68,9 +68,9 @@ void wsRecv(const u8 *data) {
     return;
   }
 
-  // start phyPressing button setb, up, down, or hold
+  // start simulating button setb, up, down, or hold
   prtfl("simulating button down: %4s", pinToName(simuPressPin));
-  edgeOutCount = 0;
+  simEdgeCount = 0;
   digitalWrite(simuPressPin, LOW);
   pinMode(simuPressPin, OUTPUT);
 }
@@ -117,9 +117,9 @@ void chkBtnPress(u8 pin) {
   }
   else if(phyPressing[pin] &&
           millis() - phyBtnEdgeTime[pin] > PHY_BTN_TIMEOUT_MS) {
-    lastPinLvl[pin]  = UNKNOWN_LVL;
+    lastPinLvl[pin]     = UNKNOWN_LVL;
     phyBtnEdgeTime[pin] = 0;
-    phyPressing[pin] = false;
+    phyPressing[pin]    = false;
     prtfl("physical button up:   %4s", pinToName(pin));
     return;
   }
@@ -148,10 +148,10 @@ void hvacLoop() {
   if (simuPressPin) {
     // simulating button press
     if (millis() - pulseTimeMs > 
-        (edgeOutCount % 2 ? SIM_BTN_PRESS_HIGH_MS : SIM_BTN_PRESS_LOW_MS)) {
-      edgeOutCount++;
-      digitalWrite(simuPressPin, edgeOutCount % 2);
-      if(edgeOutCount > SIM_BTN_EDGE_COUNT) {
+        (simEdgeCount % 2 ? SIM_BTN_PRESS_HIGH_MS : SIM_BTN_PRESS_LOW_MS)) {
+      simEdgeCount++;
+      digitalWrite(simuPressPin, simEdgeCount % 2);
+      if(simEdgeCount > SIM_BTN_EDGE_COUNT) {
         prtfl("simulating button up:   %4s", pinToName(simuPressPin));
         digitalWrite(simuPressPin, LOW);
         pinMode(simuPressPin, INPUT_PULLDOWN);
