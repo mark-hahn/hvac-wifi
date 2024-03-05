@@ -8,11 +8,11 @@
 
 #define UNKNOWN_LVL 255
 
-u8   pressPin  = 0;
-u8   edgeCount = 0;
-u8   lastPinLvl [MAX_PIN+1] = {UNKNOWN_LVL};
-u32  btnEdgeTime[MAX_PIN+1] = {0};
-bool pressing   [MAX_PIN+1] = {false};
+u8   simuPressPin = 0;
+u8   edgeOutCount = 0;
+u8   lastPinLvl    [MAX_PIN+1] = {UNKNOWN_LVL};
+u32  phyBtnEdgeTime[MAX_PIN+1] = {0};
+bool phyPressing   [MAX_PIN+1] = {false};
 
 const u8* pinToName(u8 pin){
   switch(pin){
@@ -33,7 +33,6 @@ const u8* pinToName(u8 pin){
 }
 
 u8 nameToPin(const u8 *name) {
-  // prtfl("nameToPin %s", name);
   if (!strcmp((const char*)    name, "query")) return QUERY_CMD;
   else if(!strcmp((const char*)name, "fan"  )) return PIN_FAN;
   else if(!strcmp((const char*)name, "heat" )) return PIN_HEAT;
@@ -56,25 +55,27 @@ u8 nameToPin(const u8 *name) {
 // cmd is setb, up, down, hold, or query
 void wsRecv(const u8 *data) {
   prtfl("wsRecv: '%s'", data);
-  pressPin = nameToPin(data);
-  if (!pressPin) return;
 
-  if(pressPin == QUERY_CMD) {
+  // simuPressPin non-zero means simulating button press 
+  simuPressPin = nameToPin(data);
+  if (!simuPressPin) return;
+
+  if(simuPressPin == QUERY_CMD) {
     // reset lastPinLvl so all pins reported
     for (u8 i = 0; i <= MAX_PIN; i++)
       lastPinLvl[i] = UNKNOWN_LVL;
-    pressPin = 0;
+    simuPressPin = 0;
     return;
   }
 
-  // start pressing button setb, up, down, or hold
-  prtfl("pressing: %s", data);
-  edgeCount = 0;
-  digitalWrite(pressPin, LOW);
-  pinMode(pressPin, OUTPUT);
+  // start phyPressing button setb, up, down, or hold
+  prtfl("simulating button down: %4s", pinToName(simuPressPin));
+  edgeOutCount = 0;
+  digitalWrite(simuPressPin, LOW);
+  pinMode(simuPressPin, OUTPUT);
 }
 
-void chkPin(u8 pin) {
+void chkPinChg(u8 pin) {
   if(!wifiConnected) {
     lastPinLvl[pin] = UNKNOWN_LVL;
     return;
@@ -90,11 +91,11 @@ void chkPin(u8 pin) {
   }
 }
 
-void chkBtn(u8 pin) {
+void chkBtnPress(u8 pin) {
   if(!wifiConnected) {
     lastPinLvl[pin]  = UNKNOWN_LVL;
-    btnEdgeTime[pin] = 0;
-    pressing[pin]    = false;
+    phyBtnEdgeTime[pin] = 0;
+    phyPressing[pin]    = false;
     return;
   }
   u8 pinLvl = digitalRead(pin);
@@ -104,22 +105,22 @@ void chkBtn(u8 pin) {
       return;
     }
     // falling edge
-    if(!pressing[pin]) {
-      pressing[pin]    = true;
+    if(!phyPressing[pin]) {
+      phyPressing[pin]  = true;
       const u8 *name = pinToName(pin);
-      prtfl("button down: %4s", name);
+      prtfl("physical button down: %4s", name);
       char msg[64];
       sprintf(msg, "%s pressed", name);
       wsSend((const char*) msg);
-      btnEdgeTime[pin] = millis();
+      phyBtnEdgeTime[pin] = millis();
     }
   }
-  else if(pressing[pin] &&
-          millis() - btnEdgeTime[pin] > BTN_TIME_MS) {
+  else if(phyPressing[pin] &&
+          millis() - phyBtnEdgeTime[pin] > BTN_TIME_MS) {
     lastPinLvl[pin]  = UNKNOWN_LVL;
-    btnEdgeTime[pin] = 0;
-    pressing[pin] = false;
-    prtfl("releasing %5s", pinToName(pin));
+    phyBtnEdgeTime[pin] = 0;
+    phyPressing[pin] = false;
+    prtfl("physical button up:   %4s", pinToName(pin));
     return;
   }
   lastPinLvl[pin] = pinLvl;
@@ -144,35 +145,38 @@ void hvacSetup() {
 
 void hvacLoop() {
   static u32 pulseTimeMs = 0;
-  if (pressPin) {
+  if (simuPressPin) {
+    // simulating button press
     if (millis() - pulseTimeMs > 
-        (edgeCount % 2 ? BTN_PRESS_HIGH_MS : BTN_PRESS_LOW_MS)) {
-      edgeCount++;
-      digitalWrite(pressPin, edgeCount % 2);
-      if(edgeCount > BTN_EDGE_COUNT) {
-        prtfl("button up:   %4s", pinToName(pressPin));
-        digitalWrite(pressPin, LOW);
-        pinMode(pressPin, INPUT_PULLDOWN);
-        pressPin = 0;
+        (edgeOutCount % 2 ? BTN_PRESS_HIGH_MS : BTN_PRESS_LOW_MS)) {
+      edgeOutCount++;
+      digitalWrite(simuPressPin, edgeOutCount % 2);
+      if(edgeOutCount > BTN_EDGE_COUNT) {
+        prtfl("simulating button up:   %4s", pinToName(simuPressPin));
+        digitalWrite(simuPressPin, LOW);
+        pinMode(simuPressPin, INPUT_PULLDOWN);
+        simuPressPin = 0;
       }
       pulseTimeMs = millis();
     }
   }
-  // don't check pins when pressing a button
   else {
-    chkPin(PIN_FAN);
-    chkPin(PIN_HEAT);
-    chkPin(PIN_COOL);
+    // not simulating button press
+    // check for level change on pins
+    chkPinChg(PIN_FAN);
+    chkPinChg(PIN_HEAT);
+    chkPinChg(PIN_COOL);
+    chkPinChg(PIN_G);
+    chkPinChg(PIN_W1);
+    chkPinChg(PIN_W2);
+    chkPinChg(PIN_Y1);
+    chkPinChg(PIN_Y2);
 
-    chkBtn(PIN_SETB);
-    chkBtn(PIN_UP);
-    chkBtn(PIN_DOWN);
-    chkBtn(PIN_HOLD);
+    // check for physical press of physical button
+    chkBtnPress(PIN_SETB);
+    chkBtnPress(PIN_UP);
+    chkBtnPress(PIN_DOWN);
+    chkBtnPress(PIN_HOLD);
 
-    chkPin(PIN_G);
-    chkPin(PIN_W1);
-    chkPin(PIN_W2);
-    chkPin(PIN_Y1);
-    chkPin(PIN_Y2);
   }
 }
