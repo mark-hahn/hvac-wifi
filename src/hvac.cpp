@@ -68,7 +68,7 @@ void wsRecv(const u8 *data) {
   }
 
   // start pressing button setb, up, down, or hold
-  prtfl("press cmd: %s", data);
+  prtfl("pressing: %s", data);
   edgeCount = 0;
   digitalWrite(pressPin, LOW);
   pinMode(pressPin, OUTPUT);
@@ -83,7 +83,7 @@ void chkPin(u8 pin) {
   if(pinLvl != lastPinLvl[pin]) {
     lastPinLvl[pin] = pinLvl;
     const u8 *name = pinToName(pin);
-    prtfl("pin %5s is %s", name, pinLvl ? "high" : "low");
+    prtfl("pin %5s: %s", name, pinLvl ? "high" : "low");
     char msg[16];
     sprintf(msg, "%s %d", name, pinLvl);
     wsSend((const char*) msg);
@@ -107,7 +107,7 @@ void chkBtn(u8 pin) {
     if(!pressing[pin]) {
       pressing[pin]    = true;
       const u8 *name = pinToName(pin);
-      prtfl("pressing %5s", name);
+      prtfl("button down: %4s", name);
       char msg[64];
       sprintf(msg, "%s pressed", name);
       wsSend((const char*) msg);
@@ -135,12 +135,11 @@ void hvacSetup() {
   pinMode(PIN_DOWN, INPUT_PULLDOWN);
   pinMode(PIN_HOLD, INPUT_PULLDOWN);
 
-  pinMode(PIN_G,    INPUT);
-  pinMode(PIN_W1,   INPUT);
-  pinMode(PIN_W2,   INPUT);
-  pinMode(PIN_Y1,   INPUT);
-  pinMode(PIN_Y2,   INPUT);
-  prtl("hvacSetup complete");
+  pinMode(PIN_G,    INPUT_PULLUP);
+  pinMode(PIN_W1,   INPUT_PULLUP);
+  pinMode(PIN_W2,   INPUT_PULLUP);
+  pinMode(PIN_Y1,   INPUT_PULLUP);
+  pinMode(PIN_Y2,   INPUT_PULLUP);
 }
 
 void hvacLoop() {
@@ -149,13 +148,9 @@ void hvacLoop() {
     if (millis() - pulseTimeMs > 
         (edgeCount % 2 ? BTN_PRESS_HIGH_MS : BTN_PRESS_LOW_MS)) {
       edgeCount++;
-      prtl(edgeCount % 2 ? "pressing rising edge" : "pressing falling edge");
       digitalWrite(pressPin, edgeCount % 2);
       if(edgeCount > BTN_EDGE_COUNT) {
-        prtl("done pressing");
-        prtl("done pressing");
-        prtl("done pressing");
-        prtfl("done pressing %s", pinToName(pressPin));
+        prtfl("button up:   %4s", pinToName(pressPin));
         digitalWrite(pressPin, LOW);
         pinMode(pressPin, INPUT_PULLDOWN);
         pressPin = 0;

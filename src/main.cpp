@@ -15,8 +15,7 @@ void setup() {
 
   wifiSetup();
   hvacSetup();
-
-  prtfl("\nAll setup complete, millis: %d\n", millis());
+  prtl("setup complete\n");
 }
 
 void loop() {
