@@ -116,7 +116,7 @@ void chkBtnPress(u8 pin) {
     }
   }
   else if(phyPressing[pin] &&
-          millis() - phyBtnEdgeTime[pin] > BTN_TIME_MS) {
+          millis() - phyBtnEdgeTime[pin] > PHY_BTN_TIMEOUT_MS) {
     lastPinLvl[pin]  = UNKNOWN_LVL;
     phyBtnEdgeTime[pin] = 0;
     phyPressing[pin] = false;
@@ -148,10 +148,10 @@ void hvacLoop() {
   if (simuPressPin) {
     // simulating button press
     if (millis() - pulseTimeMs > 
-        (edgeOutCount % 2 ? BTN_PRESS_HIGH_MS : BTN_PRESS_LOW_MS)) {
+        (edgeOutCount % 2 ? SIM_BTN_PRESS_HIGH_MS : SIM_BTN_PRESS_LOW_MS)) {
       edgeOutCount++;
       digitalWrite(simuPressPin, edgeOutCount % 2);
-      if(edgeOutCount > BTN_EDGE_COUNT) {
+      if(edgeOutCount > SIM_BTN_EDGE_COUNT) {
         prtfl("simulating button up:   %4s", pinToName(simuPressPin));
         digitalWrite(simuPressPin, LOW);
         pinMode(simuPressPin, INPUT_PULLDOWN);
@@ -172,7 +172,7 @@ void hvacLoop() {
     chkPinChg(PIN_Y1);
     chkPinChg(PIN_Y2);
 
-    // check for physical press of physical button
+    // check for press of physical button
     chkBtnPress(PIN_SETB);
     chkBtnPress(PIN_UP);
     chkBtnPress(PIN_DOWN);

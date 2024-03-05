@@ -3,10 +3,11 @@
 
 #include "main.h"
 
-#define BTN_PRESS_LOW_MS  20   // 20ms
-#define BTN_PRESS_HIGH_MS 40   // 40ms
-#define BTN_EDGE_COUNT    29   // 30 * 33ms = 1s
-#define BTN_TIME_MS      500   // 500ms
+#define SIM_BTN_PRESS_LOW_MS  20   // 20ms
+#define SIM_BTN_PRESS_HIGH_MS 40   // 40ms
+#define SIM_BTN_EDGE_COUNT    33   // 33*(20ms+40ms)/2 ~ 1s
+
+#define PHY_BTN_TIMEOUT_MS   100   // 100ms
 
 void wsRecv(const u8 *data);
 
