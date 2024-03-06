@@ -15,6 +15,11 @@ char password[] = DEF_PASSWORD;
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
 
+bool wsConnected() {
+  if(!wifiConnected) return false;
+  return (ws.count() > 0);
+}
+
 void wsSend(const char * message) {
   ws.textAll(message);
 }
@@ -62,6 +67,8 @@ void wifiSetup() {
 }
 
 void wifiLoop() {
+  ws.cleanupClients();
+
   static u32 lastMillis = 0;
   if (WiFi.status() != WL_CONNECTED) {
     if(wifiConnected) {
@@ -82,6 +89,4 @@ void wifiLoop() {
       prtl(WiFi.localIP());
     }
   }
-
-  ws.cleanupClients();
 }

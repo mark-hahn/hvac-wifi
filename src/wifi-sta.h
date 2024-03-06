@@ -6,7 +6,8 @@
 // 192.168.1.76
 
 extern bool wifiConnected;
- 
+
+bool wsConnected();
 void wsSend(const char *message);
 
 void wifiSetup();

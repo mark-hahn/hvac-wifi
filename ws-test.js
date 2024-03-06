@@ -1,3 +1,5 @@
+const util = require('util');
+
 const WebSocket = require('ws');
 
 let ws = null;
@@ -7,13 +9,16 @@ const connect = () => {
 
   ws.onopen = () => {
     console.log('webSocket connected');
-    ws.send('hello');
+    // ws.send('query');
   };
 
-const util = require('util');
 
   ws.onmessage = (data) => {
-    console.log('received message:', data.data);
+    const msg    = data.data;
+    const msgObj = JSON.parse(msg);
+    const disp   = util.inspect(msgObj, 
+                        {showHidden: false, depth: null});
+    console.log('received message:', disp);
   };
 
   ws.onclose = () => {
@@ -34,17 +39,8 @@ connect();
 
 process.stdin.setRawMode(true).setEncoding('utf8')
              .resume().on('data', key => {
-
   if (key === '\u0003' ) process.exit();
-
   if(ws === null) return;
-
   console.log(key);
-  switch (key) {
-    case 's': ws.send('setb');  break;
-    case 'u': ws.send('up');    break;
-    case 'd': ws.send('down');  break;
-    case 'h': ws.send('hold');  break;
-    case 'q': ws.send('query'); break;
-  }
+  if(key = 'q') ws.send('query');
 });
