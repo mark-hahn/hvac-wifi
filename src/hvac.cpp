@@ -92,6 +92,7 @@ void chkPinChg(u8 pin) {
 void chkBtnPress(u8 pin) {
   static bool phyPressing [MAX_PIN+1] = {false};
   static u32  phyBtnLastHi[MAX_PIN+1] = {0};
+  static u32  hiCount     [MAX_PIN+1] = {0};
   if(!wifiConnected) {
     phyPressing[pin] = false;
     return;
@@ -104,14 +105,16 @@ void chkBtnPress(u8 pin) {
       char msg[64];
       sprintf(msg, "%s pressed", name);
       wsSend((const char*) msg);
+      hiCount[pin] = 0;
     }
+    hiCount[pin]++;
     phyBtnLastHi[pin] = millis();
   }
   else {  // btn low
     if(phyPressing[pin] &&
         millis() - phyBtnLastHi[pin] > PHY_BTN_TIMEOUT_MS) {
       phyPressing[pin]  = false;
-      prtfl("%4s timeout", pinToName(pin));
+      prtfl("%4s timeout, %d highs", pinToName(pin), hiCount[pin]);
       return;
     }
   }
