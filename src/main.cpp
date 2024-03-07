@@ -7,9 +7,6 @@
 void setup() {
 #ifdef USE_SERIAL
   Serial.begin(921600);
-  // give monitor time to start
-  while (!Serial) sleep(2); 
-
   prtl("\n\nStarting...");
 #endif
 

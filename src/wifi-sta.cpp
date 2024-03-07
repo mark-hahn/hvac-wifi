@@ -3,8 +3,8 @@
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 
-#include "hvac.h"
 #include "main.h"
+#include "hvac.h"
 #include "wifi-sta.h"
 
 bool wifiConnected = false;

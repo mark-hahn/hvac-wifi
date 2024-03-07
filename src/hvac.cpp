@@ -13,12 +13,12 @@ u8 pins       [NUM_PINS] = {PIN_G, PIN_W1, PIN_W2, PIN_Y1, PIN_Y2};
 
 const char* pinToName(u8 pin) {
   switch(pin){
-    case PIN_G:    return (const char *) "G";
-    case PIN_W1:   return (const char *) "W1";
-    case PIN_W2:   return (const char *) "W2";
-    case PIN_Y1:   return (const char *) "Y1";
-    case PIN_Y2:   return (const char *) "Y2";
-    default:       return (const char *) "unknown";
+    case PIN_G:  return (const char *) "G";
+    case PIN_W1: return (const char *) "W1";
+    case PIN_W2: return (const char *) "W2";
+    case PIN_Y1: return (const char *) "Y1";
+    case PIN_Y2: return (const char *) "Y2";
+    default:     return (const char *) "unknown";
   }
 }
 
@@ -36,9 +36,10 @@ void sendPinStatus(bool force = false) {
 
   char res[64] = "{";
   for (u8 i = 0; i < NUM_PINS; i++) {
-    u8 pinLvl = digitalRead(pins[i]);
-    lastPinLvl[pins[i]] = pinLvl;
-    const char *name = pinToName(pins[i]);
+    u8 pin           = pins[i];
+    u8 pinLvl        = digitalRead(pin);
+    lastPinLvl[pin]  = pinLvl;
+    const char *name = pinToName(pin);
     char msg[16];
     sprintf(msg, "\"%s\":%d,", name, pinLvl);
     strcat (res, msg);
@@ -62,11 +63,11 @@ void wsRecv(const u8 *data) {
 }
 
 void hvacSetup() {
-  pinMode(PIN_G,  INPUT_PULLDOWN);
-  pinMode(PIN_W1, INPUT_PULLDOWN);
-  pinMode(PIN_W2, INPUT_PULLDOWN);
-  pinMode(PIN_Y1, INPUT_PULLDOWN);
-  pinMode(PIN_Y2, INPUT_PULLDOWN);
+  pinMode(PIN_G,  INPUT_PULLUP);
+  pinMode(PIN_W1, INPUT_PULLUP);
+  pinMode(PIN_W2, INPUT_PULLUP);
+  pinMode(PIN_Y1, INPUT_PULLUP);
+  pinMode(PIN_Y2, INPUT_PULLUP);
 }
 
 void hvacLoop() {
@@ -74,7 +75,7 @@ void hvacLoop() {
 
   bool wsIsConnected = (wifiConnected && wsConnected());
   if(wsIsConnected != wsWasConnected) {
-    prtl("conn chg");
+    prtl("connection changed");
     wsWasConnected = wsIsConnected;
     if(wsIsConnected) sendPinStatus(true);
     return;

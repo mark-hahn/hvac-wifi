@@ -12,7 +12,6 @@ const connect = () => {
     // ws.send('query');
   };
 
-
   ws.onmessage = (data) => {
     const msg    = data.data;
     const msgObj = JSON.parse(msg);
