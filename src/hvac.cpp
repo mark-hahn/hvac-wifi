@@ -41,7 +41,8 @@ void sendPinStatus(bool force = false) {
     lastPinLvl[pin]  = pinLvl;
     const char *name = pinToName(pin);
     char msg[16];
-    sprintf(msg, "\"%s\":%d,", name, pinLvl);
+    if (pinLvl) sprintf(msg, "\"%s\":false,", name);
+    else        sprintf(msg, "\"%s\":true,",  name);
     strcat (res, msg);
   }
   res[strlen(res) - 1] = '}';
