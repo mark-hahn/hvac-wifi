@@ -5,7 +5,7 @@ const WebSocket = require('ws');
 let ws = null;
 
 const connect = () => {
-  ws = new WebSocket('ws://192.168.1.76:80/ws');
+  ws = new WebSocket('ws://192.168.1.79:80/ws');
 
   ws.onopen = () => {
     console.log('webSocket connected');
@@ -14,6 +14,7 @@ const connect = () => {
 
   ws.onmessage = (data) => {
     const msg    = data.data;
+    if (msg === 'ping') return;
     const msgObj = JSON.parse(msg);
     const disp   = util.inspect(msgObj, 
                         {showHidden: false, depth: null});

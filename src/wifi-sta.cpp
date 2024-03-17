@@ -89,4 +89,14 @@ void wifiLoop() {
       prtl(WiFi.localIP());
     }
   }
+
+  static u32 lastPingTime = 0;
+  if ((millis() - lastPingTime) > PING_INTERVAL) {
+    if(wsConnected()) {
+      prtl("pinging all");
+      wsSend((const char*) "ping");
+      // ws.pingAll((u8*) "x", 1);
+    }
+    lastPingTime = millis();
+  }
 }
