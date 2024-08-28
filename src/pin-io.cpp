@@ -33,16 +33,16 @@ u8 ledOutPins[sizeof ledInPins] = {
   PIN_LED_PWR
 };
 
-const char* pinToName(u8 pin) {
+const char* pinIdxToName(u8 pin) {
   switch(pin){
-    case PIN_IN_Y1 : return (const char *) "Y1" ;
-    case PIN_IN_Y1D: return (const char *) "Y1D";
-    case PIN_IN_Y2 : return (const char *) "Y2" ;
-    case PIN_IN_Y2D: return (const char *) "Y2D";
-    case PIN_IN_G  : return (const char *) "G"  ;
-    case PIN_IN_W1 : return (const char *) "W1" ;
-    case PIN_IN_W2 : return (const char *) "W2" ;
-    case PIN_IN_PWR: return (const char *) "PWR";
+    case 0: return (const char *) "Y1" ;
+    case 1: return (const char *) "Y1D";
+    case 2: return (const char *) "Y2" ;
+    case 3: return (const char *) "Y2D";
+    case 4: return (const char *) "G"  ;
+    case 5: return (const char *) "W1" ;
+    case 6: return (const char *) "W2" ;
+    case 7: return (const char *) "PWR";
     default:         return (const char *) "unknown";
   }
 }
@@ -63,7 +63,7 @@ void sendPinVals(bool forceAll) {
   json[1] = 0;
   for (int pinIdx = 0; pinIdx < (sizeof ledOutPins); pinIdx++) {
     if(forceAll || pinChanged[pinIdx]) {
-      const char* name = pinToName(pinIdx);
+      const char* name = pinIdxToName(pinIdx);
       u8 pinLvl        = outPinLvls[pinIdx];
       char msg[32];
       if (pinLvl) sprintf(msg, "\"%s\":true,",  name);
