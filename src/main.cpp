@@ -16,8 +16,10 @@ void setup() {
 }
 
 void loop() {
+  // debug measure loop delay
   static u32 MainLoopCnt = 0;
   static u32 lastMillis  = 0;
+  // delay must be less than 2ms
   if((++MainLoopCnt % 10000) == 0) {
     prtfl("sample loop delay ms: %n", (millis() - lastMillis));
   }
