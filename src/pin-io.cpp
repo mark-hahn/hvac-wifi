@@ -33,19 +33,16 @@ u8 ledOutPins[sizeof ledInPins] = {
   PIN_LED_PWR
 };
 
-const char* pinIdxToName(u8 pin) {
-  switch(pin){
-    case 0: return (const char *) "Y1" ;
-    case 1: return (const char *) "Y1D";
-    case 2: return (const char *) "Y2" ;
-    case 3: return (const char *) "Y2D";
-    case 4: return (const char *) "G"  ;
-    case 5: return (const char *) "W1" ;
-    case 6: return (const char *) "W2" ;
-    case 7: return (const char *) "PWR";
-    default:         return (const char *) "unknown";
-  }
-}
+const char* pinNames[] = {
+  (const char *) "Y1",
+  (const char *) "Y1D",
+  (const char *) "Y2" ,
+  (const char *) "Y2D",
+  (const char *) "G"  ,
+  (const char *) "W1" ,
+  (const char *) "W2" ,
+  (const char *) "PWR"
+};
 
 int yDelayMs = DEFAULT_YDELAY_MS;
 void setYDelay(int delay) {
@@ -63,7 +60,7 @@ void sendPinVals(bool forceAll) {
   json[1] = 0;
   for (int pinIdx = 0; pinIdx < (sizeof ledOutPins); pinIdx++) {
     if(forceAll || pinChanged[pinIdx]) {
-      const char* name = pinIdxToName(pinIdx);
+      const char* name = pinNames[pinIdx];
       u8 pinLvl        = outPinLvls[pinIdx];
       char msg[32];
       if (pinLvl) sprintf(msg, "\"%s\":true,",  name);
