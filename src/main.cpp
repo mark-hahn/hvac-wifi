@@ -2,7 +2,6 @@
 
 #include "main.h"
 #include "wifi-sta.h"
-#include "hvac.h"
 #include "pin-io.h"
 
 void setup() {
@@ -12,7 +11,6 @@ void setup() {
 #endif
 
   wifiSetup();
-  hvacSetup();
   pinIoSetup();
 
   prtl("setup complete\n");
@@ -29,6 +27,5 @@ void loop() {
   lastMillis = millis();
 
   wifiLoop();
-  hvacLoop();
   pinIoLoop();
 }

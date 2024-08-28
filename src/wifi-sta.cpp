@@ -4,7 +4,7 @@
 #include <ESPAsyncWebServer.h>
 
 #include "main.h"
-#include "hvac.h"
+#include "pin-io.h"
 #include "wifi-sta.h"
 
 bool wifiConnected = false;
@@ -29,7 +29,14 @@ void recvMsg(void *arg, u8 *data, size_t len) {
   if (info->final && info->index == 0 && info->len == len 
                   && info->opcode == WS_TEXT) {
     data[len] = 0;
-    wsRecv(data);
+    const char* msg = (const char*) data;
+    if (!strcmp(msg, "query")) sendPinVals(true);
+    else if(msg[0] >= '0' && msg[0] <= '9') {
+      // numerical messages are delay in ms
+      setYDelay(atoi(msg));
+    }
+    else
+      prtfl("unsupported msg recvd: %s", msg);
   }
 }
 
@@ -67,6 +74,7 @@ void wifiSetup() {
 }
 
 void wifiLoop() {
+  static bool wsWasConnected = false;
   ws.cleanupClients();
 
   static u32 lastMillis = 0;
@@ -88,6 +96,14 @@ void wifiLoop() {
       prt("Connected to WiFi: ");
       prtl(WiFi.localIP());
     }
+  }
+
+  bool wsIsConnected = wsConnected();
+  if(wsIsConnected != wsWasConnected) {
+    prtfl("wsIsConnected changed to %s",
+           wsIsConnected ? "true" : "false");
+    wsWasConnected = wsIsConnected;
+    if(wsIsConnected) sendPinVals(true);
   }
 
   static u32 lastPingTime = 0;

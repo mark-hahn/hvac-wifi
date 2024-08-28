@@ -7,7 +7,7 @@
 #include "wifi-sta.h"
 
 #define DEBOUNCE_DELAY_MS 2
-#define Y_DELAY_MS 5000
+#define DEFAULT_YDELAY_MS 5000
 
 u8 ledInPins[] = {
   PIN_IN_Y1 ,   
@@ -47,12 +47,17 @@ const char* pinToName(u8 pin) {
   }
 }
 
+int yDelayMs = DEFAULT_YDELAY_MS;
+void setYDelay(int delay) {
+  yDelayMs = delay;
+}
+
 u8   inPinLvls[sizeof ledInPins]   = {1};
 u8   outPinLvls[sizeof ledOutPins] = {0};
 bool pinChanged[sizeof ledInPins]  = {false};
 
 // send pin status to server when any pin changes
-void sendChangedPins(bool forceAll) {
+void sendPinVals(bool forceAll) {
   char json[128];
   json[0] = '{';
   json[1] = 0;
@@ -131,7 +136,7 @@ void pinIoLoop() {
       wsWasConnected = wsConn;
 
       if(wsConn && (wsConnChg || havePinChg))
-          sendChangedPins(wsConnChg);
+         sendPinVals(wsConnChg);
 
       if(haveFanPinChg) {
         if(!inPinLvls[FAN_PIN_IDX]) {
@@ -146,8 +151,7 @@ void pinIoLoop() {
       }
     }
   }
-  if(waitingForYDelay && 
-      (now - fanOnTime) > Y_DELAY_MS) {
+  if(waitingForYDelay && ((now - fanOnTime) > yDelayMs)) {
     // Y delay timeout -> close Y relay 
     waitingForYDelay = false;
     digitalWrite(PIN_OPEN_Y1, LOW);
