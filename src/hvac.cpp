@@ -9,21 +9,6 @@
 
 #define UNKNOWN_LVL 255
 
-
-const char* pinToName(u8 pin) {
-  switch(pin){
-    case PIN_IN_Y1 : return (const char *) "Y1" ;
-    case PIN_IN_Y1D: return (const char *) "Y1D";
-    case PIN_IN_Y2 : return (const char *) "Y2" ;
-    case PIN_IN_Y2D: return (const char *) "Y2D";
-    case PIN_IN_G  : return (const char *) "G"  ;
-    case PIN_IN_W1 : return (const char *) "W1" ;
-    case PIN_IN_W2 : return (const char *) "W2" ;
-    case PIN_IN_PWR: return (const char *) "PWR";
-    default:         return (const char *) "unknown";
-  }
-}
-
 void sendPinStatus(bool force = false) {
   static char lastRes[64] = "";
 

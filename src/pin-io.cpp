@@ -1,8 +1,10 @@
 #include <Arduino.h>
 #include <WiFi.h>
 
+#include "pin-io.h"
 #include "main.h"
 #include "pins.h"
+#include "wifi-sta.h"
 
 #define Y_DELAY_MS 5000
 
@@ -38,20 +40,38 @@ void writeLedPins() {
 
 }
 
-void getPinStatus(char* res){
-  char res[64] = "{";
-  for (u8 pinIdx = 0; pinIdx < NUM_IN_PINS; pinIdx++) {
-    u8 pin           = pins[pinIdx];
-    u8 pinLvl        = digitalRead(pin);
-    lastPinLvl[pin]  = pinLvl;
-    const char *name = pinToName(pin);
-    char msg[16];
-    if (pinLvl) sprintf(msg, "\"%s\":false,", name);
-    else        sprintf(msg, "\"%s\":true,",  name);
-    strcat(res, msg);
+const char* pinToName(u8 pin) {
+  switch(pin){
+    case PIN_IN_Y1 : return (const char *) "Y1" ;
+    case PIN_IN_Y1D: return (const char *) "Y1D";
+    case PIN_IN_Y2 : return (const char *) "Y2" ;
+    case PIN_IN_Y2D: return (const char *) "Y2D";
+    case PIN_IN_G  : return (const char *) "G"  ;
+    case PIN_IN_W1 : return (const char *) "W1" ;
+    case PIN_IN_W2 : return (const char *) "W2" ;
+    case PIN_IN_PWR: return (const char *) "PWR";
+    default:         return (const char *) "unknown";
   }
-  res[strlen(res) - 1] = '}';
+}
 
+u8  inPinLvls[sizeof ledInPins]  = {255};
+u8 outPinLvls[sizeof ledOutPins] = {255};
+
+// send pin status to server when any pin changes
+void sendPinStatus() {
+  char json[128];
+  json[0] = '{';
+  json[1] = 0;
+  for (int pinIdx = 0; pinIdx < (sizeof ledOutPins); pinIdx++) {
+    const char *name = pinToName(pinIdx);
+    u8 pinLvl = outPinLvls[pinIdx];
+    char msg[16];
+    if (pinLvl) sprintf(msg, "\"%s\":true,",   name);
+    else        sprintf(msg, "\"%s\":false,",  name);
+    strcat(json, msg);
+  }
+  json[strlen(json) - 1] = '}';
+  wsSend(json);
 }
 
 u32 lastPwrFallMs = 0;
@@ -76,8 +96,6 @@ void pinIoSetup() {
 }
 
 void pinIoLoop() {
-  static u8  inPinLvls[sizeof ledInPins]  = {255};
-  static u8 outPinLvls[sizeof ledOutPins] = {255};
   static u32  fanOnTime                   = 0;
   static bool waitingForFanDelay          = false;
 
@@ -92,6 +110,7 @@ void pinIoLoop() {
         PIN_IN_PWR, handlePowerPinFall, FALLING); 
 
       // middle of power pulse, all pin inputs valid
+      bool havePinChg    = false;
       bool haveFanPinChg = false;
       for(int pinIdx = 0; 
           pinIdx < (sizeof ledInPins);  pinIdx++) {
@@ -100,13 +119,15 @@ void pinIoLoop() {
         inPinLvls[pinIdx] = inPinLvl;
         if (inPinLvl == outPinLvls[pinIdx]) {
           // input pin changed
-          int outPinGpioNum = ledOutPins[pinIdx];
+          havePinChg = true;
           if(pinIdx == FAN_PIN_IDX) haveFanPinChg = true;
+          int outPinGpioNum  = ledOutPins[pinIdx];
           u8 outPinLvl       = !inPinLvl;
           outPinLvls[pinIdx] = outPinLvl;
           digitalWrite(outPinGpioNum, outPinLvl);
         }
       }
+      if(havePinChg) sendPinStatus();
       if(haveFanPinChg) {
         if(!inPinLvls[FAN_PIN_IDX]) {
           // fan turned on -> Y relay stays open
