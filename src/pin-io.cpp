@@ -47,17 +47,17 @@ const char* pinToName(u8 pin) {
   }
 }
 
-u8   inPinLvls[sizeof ledInPins]   = {255};
-u8   outPinLvls[sizeof ledOutPins] = {255};
+u8   inPinLvls[sizeof ledInPins]   = {1};
+u8   outPinLvls[sizeof ledOutPins] = {0};
 bool pinChanged[sizeof ledInPins]  = {false};
 
 // send pin status to server when any pin changes
-void sendChangedPins() {
+void sendChangedPins(bool forceAll) {
   char json[128];
   json[0] = '{';
   json[1] = 0;
   for (int pinIdx = 0; pinIdx < (sizeof ledOutPins); pinIdx++) {
-    if(pinChanged[pinIdx]) {
+    if(forceAll || pinChanged[pinIdx]) {
       const char* name = pinToName(pinIdx);
       u8 pinLvl        = outPinLvls[pinIdx];
       char msg[32];
@@ -94,9 +94,9 @@ void pinIoSetup() {
 void pinIoLoop() {
   static u32  fanOnTime        = 0;
   static bool waitingForYDelay = false;
+  static bool wsWasConnected   = false;
 
   u32 now = millis();
-
   if(lastPwrFallMs) {
     if((now - lastPwrFallMs) > DEBOUNCE_DELAY_MS) {
       lastPwrFallMs = 0;
@@ -126,7 +126,12 @@ void pinIoLoop() {
         }
         else pinChanged[pinIdx] = false;
       }
-      if(havePinChg) sendChangedPins();
+      bool wsConn    = wsConnected();
+      bool wsConnChg = (wsConn != wsWasConnected);
+      wsWasConnected = wsConn;
+
+      if(wsConn && (wsConnChg || havePinChg))
+          sendChangedPins(wsConnChg);
 
       if(haveFanPinChg) {
         if(!inPinLvls[FAN_PIN_IDX]) {

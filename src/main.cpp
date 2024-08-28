@@ -3,6 +3,7 @@
 #include "main.h"
 #include "wifi-sta.h"
 #include "hvac.h"
+#include "pin-io.h"
 
 void setup() {
 #ifdef USE_SERIAL
@@ -12,6 +13,8 @@ void setup() {
 
   wifiSetup();
   hvacSetup();
+  pinIoSetup();
+
   prtl("setup complete\n");
 }
 
@@ -27,4 +30,5 @@ void loop() {
 
   wifiLoop();
   hvacLoop();
+  pinIoLoop();
 }

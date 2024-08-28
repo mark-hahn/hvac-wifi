@@ -1,11 +1,9 @@
-#ifndef HVAC_H
-#define HVAC_H
+#ifndef PINIO_H
+#define PINIO_H
 
-#include "main.h"
-
-void getPinStatus(char* res);
+void sendChangedPins(bool forceAll);
 
 void pinIoSetup();
 void pinIoLoop();
 
-#endif // HVAC_H
+#endif // PINIO_H
