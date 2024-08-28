@@ -3,7 +3,6 @@
 
 #define DEF_SSID     "hahn-fi"
 #define DEF_PASSWORD "90-NBVcvbasd"
-// 192.168.1.79
 
 #define PING_INTERVAL 10000  // ping every 10 secs
 

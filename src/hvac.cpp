@@ -5,20 +5,22 @@
 #include "wifi-sta.h"
 #include "hvac.h"
 #include "pins.h"
+#include "pin-io.h"
 
 #define UNKNOWN_LVL 255
 
-u8 lastPinLvl [NUM_PINS] = {UNKNOWN_LVL};
-u8 pins       [NUM_PINS] = {PIN_G, PIN_W1, PIN_W2, PIN_Y1, PIN_Y2};
 
 const char* pinToName(u8 pin) {
   switch(pin){
-    case PIN_G:  return (const char *) "G";
-    case PIN_W1: return (const char *) "W1";
-    case PIN_W2: return (const char *) "W2";
-    case PIN_Y1: return (const char *) "Y1";
-    case PIN_Y2: return (const char *) "Y2";
-    default:     return (const char *) "unknown";
+    case PIN_IN_Y1 : return (const char *) "Y1" ;
+    case PIN_IN_Y1D: return (const char *) "Y1D";
+    case PIN_IN_Y2 : return (const char *) "Y2" ;
+    case PIN_IN_Y2D: return (const char *) "Y2D";
+    case PIN_IN_G  : return (const char *) "G"  ;
+    case PIN_IN_W1 : return (const char *) "W1" ;
+    case PIN_IN_W2 : return (const char *) "W2" ;
+    case PIN_IN_PWR: return (const char *) "PWR";
+    default:         return (const char *) "unknown";
   }
 }
 
@@ -33,19 +35,10 @@ void sendPinStatus(bool force = false) {
     prtfl("ws not connected, skipping sendPinStatus");
     return;
   }
+  char res[128];
+  getPinStatus(&res);
 
-  char res[64] = "{";
-  for (u8 i = 0; i < NUM_PINS; i++) {
-    u8 pin           = pins[i];
-    u8 pinLvl        = digitalRead(pin);
-    lastPinLvl[pin]  = pinLvl;
-    const char *name = pinToName(pin);
-    char msg[16];
-    if (pinLvl) sprintf(msg, "\"%s\":false,", name);
-    else        sprintf(msg, "\"%s\":true,",  name);
-    strcat (res, msg);
-  }
-  res[strlen(res) - 1] = '}';
+
 
   if(force || strcmp(res, lastRes)) {
     strcpy(lastRes, res);

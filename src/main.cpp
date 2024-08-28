@@ -16,6 +16,13 @@ void setup() {
 }
 
 void loop() {
+  static u32 MainLoopCnt = 0;
+  static u32 lastMillis  = 0;
+  if((++MainLoopCnt % 10000) == 0) {
+    prtfl("sample loop delay ms: %n", (millis() - lastMillis));
+  }
+  lastMillis = millis();
+
   wifiLoop();
   hvacLoop();
 }

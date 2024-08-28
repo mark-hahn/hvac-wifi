@@ -1,5 +1,4 @@
-const util = require('util');
-
+const util      = require('util');
 const WebSocket = require('ws');
 
 let ws = null;

@@ -30,8 +30,8 @@ typedef int64_t  i64;
   #define prt(...)   do {} while (false)
   #define prts(...)  do {} while (false)
   #define prtl(...)  do {} while (false)
-  #define prtf(...)   do {} while (false)
-  #define prtfl(...)  do {} while (false)
+  #define prtf(...)  do {} while (false)
+  #define prtfl(...) do {} while (false)
   #define prtv(...)  do {} while (false)
   #define prtvs(...) do {} while (false)
   #define prtvl(...) do {} while (false)
@@ -67,25 +67,28 @@ typedef int64_t  i64;
 
 #ifdef USE_SERIAL // USE_SERIAL
   #include "Arduino.h"
-  #define prt(...)  Serial.print(__VA_ARGS__)
-  #define prts(...)  do {Serial.print(__VA_ARGS__); \
-                          Serial.print(" ");} \
-                      while(false)
-  #define prtc(...)  do {Serial.print(__VA_ARGS__); \
-                          Serial.print(": ");} \
-                      while(false)
-  #define prtl(...) Serial.println(__VA_ARGS__)
+  #define prt(...)   Serial.print(__VA_ARGS__)
+  #define prts(...)  do {Serial.print(__VA_ARGS__);     \
+                         Serial.print(" ");}            \
+                     while(false)
+  #define prtc(...)  do {Serial.print(__VA_ARGS__);     \
+                         Serial.print(": ");}           \
+                     while(false)
+  #define prtl(...)  Serial.println(__VA_ARGS__)
   #define prtf(...)  Serial.printf(__VA_ARGS__)
-  #define prtfl(...)  do {prtf(__VA_ARGS__); Serial.println();} while(false)
-  #define prtv(...)  do {prt(#__VA_ARGS__);        \
-                        Serial.print(": ");  \
-                        Serial.print(__VA_ARGS__);} \
-                      while(false)
-  #define prtvs(...) do {prtv(__VA_ARGS__); prt(" ");} while(false)
+  #define prtfl(...) do {prtf(__VA_ARGS__);             \
+                         Serial.println();}             \
+                     while(false)
+  #define prtv(...)  do {prt(#__VA_ARGS__);             \
+                        Serial.print(": ");             \
+                        Serial.print(__VA_ARGS__);}     \
+                     while(false)
+  #define prtvs(...) do {prtv(__VA_ARGS__);             \
+                         prt(" ");} while(false)
   #define prtvl(...) do {prt(#__VA_ARGS__);             \
-                          Serial.print(": ");     \
-                          Serial.println(__VA_ARGS__);}  \
-                      while(false)
+                         Serial.print(": ");            \
+                         Serial.println(__VA_ARGS__);}  \
+                     while(false)
 #endif // USE_SERIAL
 #endif // PRINTING
 
