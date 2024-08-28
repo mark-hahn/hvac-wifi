@@ -99,52 +99,51 @@ void pinIoLoop() {
   static bool wsWasConnected   = false;
 
   u32 now = millis();
-  if(lastPwrFallMs) {
-    if((now - lastPwrFallMs) > DEBOUNCE_DELAY_MS) {
-      lastPwrFallMs = 0;
+  if(lastPwrFallMs &&
+      (now - lastPwrFallMs) > DEBOUNCE_DELAY_MS) {
+    lastPwrFallMs = 0;
 
-      // power fall debounced, arm interrupt for next fall
-      attachInterrupt(
-        PIN_IN_PWR, handlePowerPinFall, FALLING); 
+    // power fall debounced, arm interrupt for next fall
+    attachInterrupt(
+      PIN_IN_PWR, handlePowerPinFall, FALLING); 
 
-      // inside power pulse, all pin inputs valid
-      bool havePinChg    = false;
-      bool haveFanPinChg = false;
-      for(int pinIdx = 0; 
-          pinIdx < (sizeof ledInPins);  pinIdx++) {
-        int inPinGpioNum  = ledInPins[pinIdx];
-        u8  inPinLvl      = digitalRead(inPinGpioNum);
-        inPinLvls[pinIdx] = inPinLvl;
-        if (inPinLvl == outPinLvls[pinIdx]) {
-          // input pin changed
-          pinChanged[pinIdx] = true;
-          havePinChg         = true;
-          if(pinIdx == FAN_PIN_IDX) 
-               haveFanPinChg = true;
-          int outPinGpioNum  = ledOutPins[pinIdx];
-          u8  outPinLvl      = !inPinLvl;
-          outPinLvls[pinIdx] = outPinLvl;
-          digitalWrite(outPinGpioNum, outPinLvl);
-        }
-        else pinChanged[pinIdx] = false;
+    // inside power pulse, all pin inputs valid
+    bool havePinChg    = false;
+    bool haveFanPinChg = false;
+    for(int pinIdx = 0; 
+        pinIdx < (sizeof ledInPins);  pinIdx++) {
+      int inPinGpioNum  = ledInPins[pinIdx];
+      u8  inPinLvl      = digitalRead(inPinGpioNum);
+      inPinLvls[pinIdx] = inPinLvl;
+      if (inPinLvl == outPinLvls[pinIdx]) {
+        // input pin changed
+        pinChanged[pinIdx] = true;
+        havePinChg         = true;
+        if(pinIdx == FAN_PIN_IDX) 
+              haveFanPinChg = true;
+        int outPinGpioNum  = ledOutPins[pinIdx];
+        u8  outPinLvl      = !inPinLvl;
+        outPinLvls[pinIdx] = outPinLvl;
+        digitalWrite(outPinGpioNum, outPinLvl);
       }
-      bool wsConn    = wsConnected();
-      bool wsConnChg = (wsConn != wsWasConnected);
-      wsWasConnected = wsConn;
+      else pinChanged[pinIdx] = false;
+    }
+    bool wsConn    = wsConnected();
+    bool wsConnChg = (wsConn != wsWasConnected);
+    wsWasConnected = wsConn;
 
-      if(wsConn && (wsConnChg || havePinChg))
-         sendPinVals(wsConnChg);
+    if(wsConn && (wsConnChg || havePinChg))
+        sendPinVals(wsConnChg);
 
-      if(haveFanPinChg) {
-        if(!inPinLvls[FAN_PIN_IDX]) {
-          // fan turned on -> Y relay stays open
-          fanOnTime        = now;
-          waitingForYDelay = true;
-        } else {  
-          // fan turned off -> open Y relay 
-          digitalWrite(PIN_OPEN_Y1, HIGH);
-          digitalWrite(PIN_OPEN_Y2, HIGH);
-        }
+    if(haveFanPinChg) {
+      if(!inPinLvls[FAN_PIN_IDX]) {
+        // fan turned on -> Y relay stays open
+        fanOnTime        = now;
+        waitingForYDelay = true;
+      } else {  
+        // fan turned off -> open Y relay 
+        digitalWrite(PIN_OPEN_Y1, HIGH);
+        digitalWrite(PIN_OPEN_Y2, HIGH);
       }
     }
   }
