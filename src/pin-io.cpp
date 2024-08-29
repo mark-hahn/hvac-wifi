@@ -60,8 +60,8 @@ void sendPinVals(bool forceAll) {
       const char* name = pinNames[pinIdx];
       u8 pinLvl        = outPinLvls[pinIdx];
       char msg[32];
-      if (pinLvl) sprintf(msg, "\"%s\":true,",  name);
-      else        sprintf(msg, "\"%s\":false,", name);
+      if (pinLvl) sprintf(msg, "\"%s\":1,", name);
+      else        sprintf(msg, "\"%s\":0,", name);
       strcat(json, msg);
     }
   }
@@ -156,7 +156,7 @@ void pinIoLoop() {
         pinChanged[pinIdx] = true;
         havePinChg         = true;
         if(pinIdx == FAN_PIN_IDX) 
-              haveFanPinChg = true;
+          haveFanPinChg = true;
         int outPinGpioNum  = ledOutPinGpios[pinIdx];
         u8  outPinLvl      = !inPinLvl;
         outPinLvls[pinIdx] = outPinLvl;

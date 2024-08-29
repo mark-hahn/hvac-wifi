@@ -32,6 +32,7 @@ void loop() {
   if (testing) {
     u32 now = millis();
     if (firstMillis == 0) firstMillis = now;
+    if (lastMillis == 0)  lastMillis = now;
     u32 delay = now - lastMillis;
     lastMillis = now;
     if(delay > worstLoopDelay) {
