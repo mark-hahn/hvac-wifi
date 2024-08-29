@@ -27,16 +27,20 @@ void loop() {
   static u32  firstMillis    = 0;
   static u32  lastMillis     = 0;
   static u32  worstLoopDelay = 0;
+  static u32  worstDelayTime = 0;
   static bool testing        = true;
   if (testing) {
     u32 now = millis();
     if (firstMillis == 0) firstMillis = now;
     u32 delay = now - lastMillis;
     lastMillis = now;
-    if(delay > worstLoopDelay)
+    if(delay > worstLoopDelay) {
       worstLoopDelay = delay;
+      worstDelayTime = now;
+    }
     if((now-firstMillis) > 30000) {
-      prtfl("worst loop delay ms: %n", worstLoopDelay);
+      prtfl("worst loop delay ms: %n, time:%n", 
+             worstLoopDelay, worstDelayTime);
       testing = false;
     }
   }
