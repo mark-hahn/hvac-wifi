@@ -20,11 +20,13 @@ bool wsConnected() {
   return (ws.count() > 0);
 }
 
-void wsSend(const char * message) {
+void wsSendMsg(const char * message) {
+  setWifiLedPulsing(true, true); // one pulse
   ws.textAll(message);
 }
 
-void recvMsg(void *arg, u8 *data, size_t len) {
+void wsRecvMsg(void *arg, u8 *data, size_t len) {
+  setWifiLedPulsing(true, true); // one pulse
   AwsFrameInfo *info = (AwsFrameInfo*) arg;
   if (info->final && info->index == 0 && info->len == len 
                   && info->opcode == WS_TEXT) {
@@ -53,7 +55,7 @@ void eventHandler(AsyncWebSocket *server,
       Serial.printf("WebSocket client #%u disconnected\n", client->id());
       break;
     case WS_EVT_DATA:
-      recvMsg(arg, data, len);
+      wsRecvMsg(arg, data, len);
       break;
     case WS_EVT_PONG:
     case WS_EVT_ERROR:
@@ -71,6 +73,7 @@ void wifiSetup() {
   server.addHandler(&ws);
   
   server.begin();
+  setWifiLedPulsing(true);
 }
 
 void wifiLoop() {
@@ -84,6 +87,7 @@ void wifiLoop() {
       prtl();
       prtl("Disconnected from WiFi");
       WiFi.begin(ssid, password);
+      setWifiLedPulsing(true);
     }
     if ((millis() - lastMillis) > 1000) {
       prt(".");
@@ -93,8 +97,8 @@ void wifiLoop() {
   else {
     if(!wifiConnected) {
       wifiConnected = true;
-      prt("Connected to WiFi: ");
-      prtl(WiFi.localIP());
+      prtfl("Connected to WiFi: %s", WiFi.localIP());
+      setWifiLedPulsing(false);
     }
   }
 
@@ -110,7 +114,7 @@ void wifiLoop() {
   if ((millis() - lastPingTime) > PING_INTERVAL) {
     if(wsConnected()) {
       prtl("pinging all");
-      wsSend((const char*) "ping");
+      wsSendMsg((const char*) "ping");
       // ws.pingAll((u8*) "x", 1);
     }
     lastPingTime = millis();

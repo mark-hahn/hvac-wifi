@@ -70,7 +70,7 @@ void sendPinVals(bool forceAll) {
     }
   }
   json[strlen(json)-1] = '}';
-  wsSend(json);
+  wsSendMsg(json);
 }
 
 u32 lastPwrFallMs = 0;
