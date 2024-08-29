@@ -4,6 +4,8 @@
 #include <arduino.h>
 #include <stdint.h>
 
+extern bool wifiEnabled;
+
 #define USE_SERIAL
 // #define USE_TELNET  // includes SERIAL
 // #define SHOW_TIME

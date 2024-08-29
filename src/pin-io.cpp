@@ -128,7 +128,7 @@ void pinIoLoop() {
       }
       else pinChanged[pinIdx] = false;
     }
-    bool wsConn    = wsConnected();
+    bool wsConn    = (wifiEnabled && wsConnected());
     bool wsConnChg = (wsConn != wsWasConnected);
     wsWasConnected = wsConn;
 

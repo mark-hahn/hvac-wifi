@@ -6,8 +6,6 @@
 
 #define PING_INTERVAL 10000  // ping every 10 secs
 
-extern bool wifiConnected;
-
 bool wsConnected();
 void wsSend(const char *message);
 

@@ -1,8 +1,11 @@
 #include "Arduino.h"
 
 #include "main.h"
+#include "pins.h"
 #include "wifi-sta.h"
 #include "pin-io.h"
+
+bool wifiEnabled;
 
 void setup() {
 #ifdef USE_SERIAL
@@ -10,7 +13,9 @@ void setup() {
   prtl("\n\nStarting...");
 #endif
 
-  wifiSetup();
+  wifiEnabled = !digitalRead(PIN_ENBL_WIFI);
+
+  if(wifiEnabled) wifiSetup();
   pinIoSetup();
 
   prtl("setup complete\n");
@@ -26,6 +31,6 @@ void loop() {
   }
   lastMillis = millis();
 
-  wifiLoop();
+  if(wifiEnabled) wifiLoop();
   pinIoLoop();
 }
