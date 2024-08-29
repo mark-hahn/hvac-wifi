@@ -8,7 +8,7 @@
 
 #define DEBOUNCE_DELAY_MS 2
 #define DEFAULT_YDELAY_MS 5000
-#define WIFI_LED_PULSE_MS 500
+#define WIFI_LED_PULSE_MS 250
 
 u8 ledInPinGpios[] = {
   PIN_IN_Y1 ,   
@@ -86,30 +86,28 @@ u32  wifiLedChgTime = 0;
 bool wifiLedOn      = false;
 
 void setWifiLedPulsing(bool pulsing, bool once = false) {
-  if(!wifiEnabled) {
-    wifiLedPulsing = false;
-    wifiLedOn      = false;
-    digitalWrite(PIN_LED_WIFI, LOW);
-    return;
-  }
-  if(pulsing) {
-    wifiLedPulsing = true;
-    wifiLedOnce    = once;    
+  wifiLedPulsing = pulsing;
+  wifiLedOnce    = once;    
+  if(wifiLedPulsing) {
     wifiLedChgTime = millis();
     wifiLedOn      = false;
     digitalWrite(PIN_LED_WIFI, LOW);
   }
   else {
-    wifiLedPulsing = false;
-    wifiLedOn      = true;
+    wifiLedOn = true;
     digitalWrite(PIN_LED_WIFI, HIGH);
   }
 }
 
 void checkWifiLed() {
-  if(!wifiEnabled) {
-    digitalWrite(PIN_LED_WIFI, LOW);
-    return;
+  if(!wifiLedPulsing) return;
+  u32 now = millis();
+  if((now - wifiLedChgTime) > WIFI_LED_PULSE_MS) {
+    wifiLedChgTime = now;
+    wifiLedOn      = !wifiLedOn;
+    digitalWrite(PIN_LED_WIFI, wifiLedOn);
+    if(wifiLedOnce && wifiLedOn)
+      wifiLedPulsing = false;
   }
 }
 
@@ -195,5 +193,5 @@ void pinIoLoop() {
     digitalWrite(PIN_OPEN_Y1, LOW);
     digitalWrite(PIN_OPEN_Y2, LOW);
   }
-  checkWifiLed();
+  if(wifiEnabled) checkWifiLed();
 }
