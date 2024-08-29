@@ -6,10 +6,6 @@
 #include "pins.h"
 #include "wifi-sta.h"
 
-#define DEBOUNCE_DELAY_MS 2
-#define DEFAULT_YDELAY_MS 5000
-#define WIFI_LED_PULSE_MS 250
-
 u8 ledInPinGpios[] = {
   PIN_IN_Y1 ,   
   PIN_IN_Y1D,   
