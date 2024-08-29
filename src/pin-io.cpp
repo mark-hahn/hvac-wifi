@@ -8,8 +8,9 @@
 
 #define DEBOUNCE_DELAY_MS 2
 #define DEFAULT_YDELAY_MS 5000
+#define WIFI_LED_PULSE_MS 500
 
-u8 ledInPins[] = {
+u8 ledInPinGpios[] = {
   PIN_IN_Y1 ,   
   PIN_IN_Y1D,   
   PIN_IN_Y2 ,   
@@ -22,14 +23,14 @@ u8 ledInPins[] = {
 
 #define FAN_PIN_IDX  4
 
-u8 ledOutPins[sizeof ledInPins] = {
-  PIN_LED_Y1  ,
-  PIN_LED_Y1D ,
-  PIN_LED_Y2  ,
-  PIN_LED_Y2D ,
-  PIN_LED_G   ,
-  PIN_LED_W1  ,
-  PIN_LED_W2  ,
+u8 ledOutPinGpios[sizeof ledInPinGpios] = {
+  PIN_LED_Y1 ,
+  PIN_LED_Y1D,
+  PIN_LED_Y2 ,
+  PIN_LED_Y2D,
+  PIN_LED_G  ,
+  PIN_LED_W1 ,
+  PIN_LED_W2 ,
   PIN_LED_PWR
 };
 
@@ -49,16 +50,16 @@ void setYDelay(int delay) {
   yDelayMs = delay;
 }
 
-u8   inPinLvls[sizeof ledInPins]   = {1};
-u8   outPinLvls[sizeof ledOutPins] = {0};
-bool pinChanged[sizeof ledInPins]  = {false};
+u8   inPinLvls[sizeof ledInPinGpios]   = {1};
+u8   outPinLvls[sizeof ledOutPinGpios] = {0};
+bool pinChanged[sizeof ledInPinGpios]  = {false};
 
 // send pin status to server when any pin changes
 void sendPinVals(bool forceAll) {
   char json[128];
   json[0] = '{';
   json[1] = 0;
-  for (int pinIdx = 0; pinIdx < (sizeof ledOutPins); pinIdx++) {
+  for (int pinIdx = 0; pinIdx < (sizeof ledOutPinGpios); pinIdx++) {
     if(forceAll || pinChanged[pinIdx]) {
       const char* name = pinNames[pinIdx];
       u8 pinLvl        = outPinLvls[pinIdx];
@@ -79,16 +80,57 @@ void IRAM_ATTR handlePowerPinFall() {
   lastPwrFallMs = millis();
 }
 
+bool wifiLedPulsing = false;
+bool wifiLedOnce    = false;
+u32  wifiLedChgTime = 0;
+bool wifiLedOn      = false;
+
+void setWifiLedPulsing(bool pulsing, bool once = false) {
+  if(!wifiEnabled) {
+    wifiLedPulsing = false;
+    wifiLedOn      = false;
+    digitalWrite(PIN_LED_WIFI, LOW);
+    return;
+  }
+  if(pulsing) {
+    wifiLedPulsing = true;
+    wifiLedOnce    = once;    
+    wifiLedChgTime = millis();
+    wifiLedOn      = false;
+    digitalWrite(PIN_LED_WIFI, LOW);
+  }
+  else {
+    wifiLedPulsing = false;
+    wifiLedOn      = true;
+    digitalWrite(PIN_LED_WIFI, HIGH);
+  }
+}
+
+void checkWifiLed() {
+  if(!wifiEnabled) {
+    digitalWrite(PIN_LED_WIFI, LOW);
+    return;
+  }
+}
+
 void pinIoSetup() {
-  for(int pinIdx = 0; pinIdx < (sizeof ledInPins);  pinIdx++)
-    pinMode(ledInPins[pinIdx],  INPUT);
-  for(int pinIdx = 0; pinIdx < (sizeof ledOutPins); pinIdx++)
-    pinMode(ledOutPins[pinIdx], OUTPUT);
-  pinMode(PIN_ENBL_WIFI,   INPUT);
-  pinMode(PIN_OPEN_Y1,     OUTPUT);  
-  pinMode(PIN_OPEN_Y2,     OUTPUT);  
-  digitalWrite(PIN_OPEN_Y1, LOW);
-  digitalWrite(PIN_OPEN_Y2, LOW);
+  for(int pinIdx = 0; pinIdx < (sizeof ledInPinGpios);  pinIdx++)
+    pinMode(ledInPinGpios[pinIdx],  INPUT);
+  for(int pinIdx = 0; pinIdx < (sizeof ledOutPinGpios); pinIdx++) {
+    pinMode(ledOutPinGpios[pinIdx], OUTPUT);
+    digitalWrite(ledOutPinGpios[pinIdx], LOW);
+  }
+  pinMode(PIN_ENBL_WIFI, INPUT);
+  pinMode(PIN_LED_WIFI,  OUTPUT);
+  pinMode(PIN_OPEN_Y1,   OUTPUT);  
+  pinMode(PIN_OPEN_Y2,   OUTPUT);  
+
+  digitalWrite(PIN_LED_WIFI, LOW);
+  digitalWrite(PIN_OPEN_Y1,  LOW);
+  digitalWrite(PIN_OPEN_Y2,  LOW);
+
+  wifiLedOn = false;
+
   attachInterrupt(
     PIN_IN_PWR, handlePowerPinFall, FALLING);  
 }
@@ -111,8 +153,8 @@ void pinIoLoop() {
     bool havePinChg    = false;
     bool haveFanPinChg = false;
     for(int pinIdx = 0; 
-        pinIdx < (sizeof ledInPins);  pinIdx++) {
-      int inPinGpioNum  = ledInPins[pinIdx];
+        pinIdx < (sizeof ledInPinGpios);  pinIdx++) {
+      int inPinGpioNum  = ledInPinGpios[pinIdx];
       u8  inPinLvl      = digitalRead(inPinGpioNum);
       inPinLvls[pinIdx] = inPinLvl;
       if (inPinLvl == outPinLvls[pinIdx]) {
@@ -121,7 +163,7 @@ void pinIoLoop() {
         havePinChg         = true;
         if(pinIdx == FAN_PIN_IDX) 
               haveFanPinChg = true;
-        int outPinGpioNum  = ledOutPins[pinIdx];
+        int outPinGpioNum  = ledOutPinGpios[pinIdx];
         u8  outPinLvl      = !inPinLvl;
         outPinLvls[pinIdx] = outPinLvl;
         digitalWrite(outPinGpioNum, outPinLvl);
@@ -153,4 +195,5 @@ void pinIoLoop() {
     digitalWrite(PIN_OPEN_Y1, LOW);
     digitalWrite(PIN_OPEN_Y2, LOW);
   }
+  checkWifiLed();
 }
