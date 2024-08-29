@@ -23,7 +23,7 @@ void setup() {
 
 void loop() {
   // measure loop delay for 30 secs
-  // delay must be less than 2ms
+  // delay must be less than 4ms
   static u32  firstMillis    = 0;
   static u32  lastMillis     = 0;
   static u32  worstLoopDelay = 0;

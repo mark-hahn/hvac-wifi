@@ -15,6 +15,14 @@ char password[] = DEF_PASSWORD;
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
 
+void printMacAddr(){
+  u8 baseMac[6];
+  WiFi.macAddress(baseMac);
+  prtfl("mac: %02x:%02x:%02x:%02x:%02x:%02x",
+              baseMac[0], baseMac[1], baseMac[2],
+              baseMac[3], baseMac[4], baseMac[5]);
+}
+
 bool wsConnected() {
   if(!wifiConnected) return false;
   return (ws.count() > 0);
@@ -98,6 +106,7 @@ void wifiLoop() {
     if(!wifiConnected) {
       wifiConnected = true;
       prtfl("Connected to WiFi: %s", WiFi.localIP());
+      printMacAddr();
       setWifiLedPulsing(false, false);
     }
   }
