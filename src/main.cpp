@@ -22,14 +22,24 @@ void setup() {
 }
 
 void loop() {
-  // debug measure loop delay
-  static u32 MainLoopCnt = 0;
-  static u32 lastMillis  = 0;
+  // measure loop delay for 30 secs
   // delay must be less than 2ms
-  if((++MainLoopCnt % 10000) == 0) {
-    prtfl("sample loop delay ms: %n", (millis() - lastMillis));
+  static u32  firstMillis    = 0;
+  static u32  lastMillis     = 0;
+  static u32  worstLoopDelay = 0;
+  static bool testing        = true;
+  if (testing) {
+    u32 now = millis();
+    if (firstMillis == 0) firstMillis = now;
+    u32 delay = now - lastMillis;
+    lastMillis = now;
+    if(delay > worstLoopDelay)
+      worstLoopDelay = delay;
+    if((now-firstMillis) > 30000) {
+      prtfl("worst loop delay ms: %n", worstLoopDelay);
+      testing = false;
+    }
   }
-  lastMillis = millis();
 
   if(wifiEnabled) wifiLoop();
   pinIoLoop();
