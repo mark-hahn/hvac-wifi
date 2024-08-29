@@ -73,7 +73,7 @@ void wifiSetup() {
   server.addHandler(&ws);
   
   server.begin();
-  setWifiLedPulsing(true);
+  setWifiLedPulsing(true, false);
 }
 
 void wifiLoop() {
@@ -87,7 +87,7 @@ void wifiLoop() {
       prtl();
       prtl("Disconnected from WiFi");
       WiFi.begin(ssid, password);
-      setWifiLedPulsing(true);
+      setWifiLedPulsing(true, false);
     }
     if ((millis() - lastMillis) > 1000) {
       prt(".");
@@ -98,7 +98,7 @@ void wifiLoop() {
     if(!wifiConnected) {
       wifiConnected = true;
       prtfl("Connected to WiFi: %s", WiFi.localIP());
-      setWifiLedPulsing(false);
+      setWifiLedPulsing(false, false);
     }
   }
 

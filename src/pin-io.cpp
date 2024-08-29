@@ -85,7 +85,7 @@ bool wifiLedOnce    = false;
 u32  wifiLedChgTime = 0;
 bool wifiLedOn      = false;
 
-void setWifiLedPulsing(bool pulsing, bool once = false) {
+void setWifiLedPulsing(bool pulsing, bool once) {
   wifiLedPulsing = pulsing;
   wifiLedOnce    = once;    
   if(wifiLedPulsing) {

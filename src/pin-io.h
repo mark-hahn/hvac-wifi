@@ -3,7 +3,7 @@
 
 void sendPinVals(bool forceAll);
 void setYDelay(int delay);
-void setWifiLedPulsing(bool pulsing, bool once = false);
+void setWifiLedPulsing(bool pulsing, bool once);
 
 void pinIoSetup();
 void pinIoLoop();
