@@ -81,37 +81,6 @@ void IRAM_ATTR handlePowerPinFall() {
   lastPwrFallTime = millis();
 }
 
-bool wifiLedPulsing = false;
-bool wifiLedOnce    = false;
-u32  wifiLedChgTime = 0;
-bool wifiLedOn      = false;
-
-void setWifiLedPulsing(bool pulsing, bool once) {
-  wifiLedPulsing = pulsing;
-  wifiLedOnce    = once;    
-  if(wifiLedPulsing) {
-    wifiLedChgTime = millis();
-    wifiLedOn      = false;
-    digitalWrite(PIN_LED_WIFI, LOW);
-  }
-  else {
-    wifiLedOn = true;
-    digitalWrite(PIN_LED_WIFI, HIGH);
-  }
-}
-
-void checkWifiLed() {
-  if(!wifiLedPulsing) return;
-  u32 now = millis();
-  if((now - wifiLedChgTime) > WIFI_LED_PULSE_MS) {
-    wifiLedChgTime = now;
-    wifiLedOn      = !wifiLedOn;
-    digitalWrite(PIN_LED_WIFI, wifiLedOn);
-    if(wifiLedOnce && wifiLedOn)
-      wifiLedPulsing = false;
-  }
-}
-
 void pinIoSetup() {
   for(int pinIdx = 0; pinIdx < PIN_COUNT;  pinIdx++)
     pinMode(inputPinGpios[pinIdx],  INPUT);
@@ -127,8 +96,6 @@ void pinIoSetup() {
   digitalWrite(PIN_LED_WIFI, LOW);
   digitalWrite(PIN_OPEN_Y1,  LOW);
   digitalWrite(PIN_OPEN_Y2,  LOW);
-
-  wifiLedOn = false;
 
   attachInterrupt(
     PIN_IN_PWR, handlePowerPinFall, FALLING);  
@@ -217,5 +184,4 @@ void pinIoLoop() {
     digitalWrite(PIN_OPEN_Y1, LOW);
     digitalWrite(PIN_OPEN_Y2, LOW);
   }
-  if(wifiEnabled) checkWifiLed();
 }
