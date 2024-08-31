@@ -4,10 +4,6 @@
 #include <arduino.h>
 #include <stdint.h>
 
-extern bool wifiEnabled;
-extern u32  pwrPulses;
-extern u32  inPwrPulses;
-
 #define USE_SERIAL
 // #define USE_TELNET  // includes SERIAL
 // #define SHOW_TIME
@@ -22,6 +18,9 @@ typedef int16_t  i16;
 typedef int32_t  i32;
 typedef int64_t  i64;
 
+extern bool wifiEnabled;
+extern u32  pwrPulses;
+extern u32  inPwrPulses;
 
 /*
   ota, telnet, and stream work together

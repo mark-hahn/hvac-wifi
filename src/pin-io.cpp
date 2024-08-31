@@ -22,8 +22,9 @@ u8 inputPinGpios[] = {
 #define Y2_PIN_IDX  2
 #define Y2D_PIN_IDX 3
 #define FAN_PIN_IDX 4
+#define PIN_COUNT (sizeof inputPinGpios)
 
-u8 ledOutPinGpios[sizeof inputPinGpios] = {
+u8 ledOutPinGpios[PIN_COUNT] = {
   PIN_LED_Y1 ,
   PIN_LED_Y1D,
   PIN_LED_Y2 ,
@@ -34,7 +35,8 @@ u8 ledOutPinGpios[sizeof inputPinGpios] = {
   PIN_LED_PWR
 };
 
-const char* pinNames[] = {
+
+const char* pinNames[PIN_COUNT] = {
   (const char *) "Y1",
   (const char *) "Y1D",
   (const char *) "Y2" ,
@@ -59,7 +61,7 @@ void sendPinVals(bool forceAll) {
   char json[128];
   json[0] = '{';
   json[1] = 0;
-  for (int pinIdx = 0; pinIdx < pinCount; pinIdx++) {
+  for (int pinIdx = 0; pinIdx < PIN_COUNT; pinIdx++) {
     if(forceAll || pinChanged[pinIdx]) {
       const char* name = pinNames[pinIdx];
       u8 pinLvl        = outPinLvls[pinIdx];
@@ -112,9 +114,9 @@ void checkWifiLed() {
 }
 
 void pinIoSetup() {
-  for(int pinIdx = 0; pinIdx < pinCount;  pinIdx++)
+  for(int pinIdx = 0; pinIdx < PIN_COUNT;  pinIdx++)
     pinMode(inputPinGpios[pinIdx],  INPUT);
-  for(int pinIdx = 0; pinIdx < pinCount; pinIdx++) {
+  for(int pinIdx = 0; pinIdx < PIN_COUNT; pinIdx++) {
     pinMode(ledOutPinGpios[pinIdx], OUTPUT);
     digitalWrite(ledOutPinGpios[pinIdx], LOW);
   }
@@ -138,7 +140,6 @@ void pinIoLoop() {
   static bool waitingForYDelay = false;
   static bool wsWasConnected   = false;
   u32 now      = millis();
-  int pinCount = (sizeof inputPinGpios);
 
   if(lastPwrFallTime) {
     // interrupt happened, start of power pulse
@@ -148,7 +149,7 @@ void pinIoLoop() {
        pwrDelay < PWR_ACTV_MS) {
 
       // all pin inputs valid, read pins asap
-      for(int pinIdx = 0; pinIdx < pinCount;  pinIdx++)
+      for(int pinIdx = 0; pinIdx < PIN_COUNT;  pinIdx++)
         inPinLvls[pinIdx] = digitalRead(inputPinGpios[pinIdx]);
       
       bool havePinChg    = false;
@@ -156,7 +157,7 @@ void pinIoLoop() {
       u8   fanPinInLvl;
 
       // get outPinLvls & check for pin changes
-      for(int pinIdx = 0; pinIdx < pinCount;  pinIdx++) {
+      for(int pinIdx = 0; pinIdx < PIN_COUNT;  pinIdx++) {
         u8 inPinLvl = inPinLvls[pinIdx];
         // compare in to old out
         if (inPinLvl == outPinLvls[pinIdx]) {
@@ -172,7 +173,7 @@ void pinIoLoop() {
       }
 
       // digitalWrite all out pins
-      for(int pinIdx = 0; pinIdx < pinCount;  pinIdx++) {
+      for(int pinIdx = 0; pinIdx < PIN_COUNT;  pinIdx++) {
         u8 inPinLvl = inPinLvls[pinIdx];
         int gpioNum     = ledOutPinGpios[pinIdx];
         u8  outPinLvl   = outPinLvls[pinIdx];
@@ -195,7 +196,7 @@ void pinIoLoop() {
         sendPinVals(wsConnChg);
 
       if(haveFanPinChg) {
-        if(!fanPinInLvl]) {
+        if(!fanPinInLvl) {
           // fan turned on -> Y relays stay open
           fanOnTime        = now;
           waitingForYDelay = true;
