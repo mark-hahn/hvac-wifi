@@ -35,7 +35,6 @@ u8 ledOutPinGpios[PIN_COUNT] = {
   PIN_LED_PWR
 };
 
-
 const char* pinNames[PIN_COUNT] = {
   (const char *) "Y1",
   (const char *) "Y1D",
