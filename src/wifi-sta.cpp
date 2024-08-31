@@ -55,9 +55,8 @@ void printMacAddr(){
               baseMac[3], baseMac[4], baseMac[5]);
 }
 
-bool wsConnected() {
-  if(!wifiConnected) return false;
-  return (ws.count() > 0);
+int wsConnCount() {
+  return ws.count();
 }
 
 void wsSendMsg(const char * message) {
@@ -72,11 +71,12 @@ void wsRecvMsg(void *arg, u8 *data, size_t len) {
                   && info->opcode == WS_TEXT) {
     data[len] = 0;
     const char* msg = (const char*) data;
-    if (!strcmp(msg, "query")) sendPinVals(true);
-    else if(msg[0] >= '0' && msg[0] <= '9') {
+    if (!strcmp(msg, "query")) 
+      // query cmd sends all pin vals
+      sendPinVals(true);
+    else if(msg[0] >= '0' && msg[0] <= '9') 
       // numerical messages are delay in ms
-      setYDelay(atoi(msg));
-    }
+      yDelayMs = atoi(msg);
     else
       prtfl("unsupported msg recvd: %s", msg);
   }
@@ -118,7 +118,7 @@ void wifiSetup() {
 }
 
 void wifiLoop() {
-  static bool wsWasConnected = false;
+  static bool oldWsConnCnt = 0;
   ws.cleanupClients();
 
   static u32 lastMillis = 0;
@@ -144,17 +144,16 @@ void wifiLoop() {
     }
   }
 
-  bool wsIsConnected = wsConnected();
-  if(wsIsConnected != wsWasConnected) {
-    prtfl("wsIsConnected changed to %s",
-           wsIsConnected ? "true" : "false");
-    wsWasConnected = wsIsConnected;
-    if(wsIsConnected) sendPinVals(true);
+  int wsConnCnt = wsConnCount();
+  if(wsConnCnt != oldWsConnCnt) {
+    prtfl("new wsConnCnt: %d", wsConnCnt);
+    oldWsConnCnt = wsConnCnt;
+    if(wsConnCnt) sendPinVals(true);
   }
 
   static u32 lastPingTime = 0;
   if ((millis() - lastPingTime) > PING_INTERVAL) {
-    if(wsConnected()) {
+    if(wsConnCount()) {
       prtl("pinging all");
       wsSendMsg((const char*) "ping");
       // ws.pingAll((u8*) "x", 1);

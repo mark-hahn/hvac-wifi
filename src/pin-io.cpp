@@ -1,10 +1,10 @@
 #include <Arduino.h>
 #include <WiFi.h>
 
-#include "pin-io.h"
 #include "main.h"
-#include "pins.h"
 #include "wifi-sta.h"
+#include "pins.h"
+#include "pin-io.h"
 
 u8 inputPinGpios[] = {
   PIN_IN_Y1 ,   
@@ -47,9 +47,6 @@ const char* pinNames[PIN_COUNT] = {
 };
 
 int yDelayMs = DEFAULT_YDELAY_MS;
-void setYDelay(int delay) {
-  yDelayMs = delay;
-}
 
 u8   inPinLvls[sizeof inputPinGpios]   = {1};
 u8   outPinLvls[sizeof ledOutPinGpios] = {0};
@@ -153,11 +150,12 @@ void pinIoLoop() {
         digitalWrite(gpioNum, outWriteVal);
       }
 
-      bool wsConn    = (wifiEnabled && wsConnected());
+      bool wsConn    = (wifiEnabled && wsConnCount());
       bool wsConnChg = (wsConn != wsWasConnected);
       wsWasConnected = wsConn;
 
       // send changed pin values out wifi
+      // if new web socket then send all pins
       if(wsConn && (wsConnChg || havePinChg))
         sendPinVals(wsConnChg);
 
