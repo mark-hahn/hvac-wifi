@@ -102,7 +102,7 @@ void pinIoLoop() {
   static u32  fanOnTime        = 0;
   static bool waitingForYDelay = false;
   static bool wsWasConnected   = false;
-  u32 now      = millis();
+  u32 now = millis();
 
   if(lastPwrFallTime) {
     // interrupt happened, start of power pulse
@@ -142,10 +142,10 @@ void pinIoLoop() {
         u8  outPinLvl   = outPinLvls[pinIdx];
         u8  outWriteVal = outPinLvl;
         if(pinIdx == Y1_PIN_IDX && outPinLvl && 
-            outPinLvls[Y1D_PIN_IDX] )
+            outPinLvls[Y1D_PIN_IDX])
           outWriteVal = 0;
         if(pinIdx == Y2_PIN_IDX && outPinLvl && 
-            outPinLvls[Y2D_PIN_IDX] )
+            outPinLvls[Y2D_PIN_IDX])
           outWriteVal = 0;
         digitalWrite(gpioNum, outWriteVal);
       }
@@ -165,7 +165,7 @@ void pinIoLoop() {
           fanOnTime        = now;
           waitingForYDelay = true;
         } else {  
-          // fan turned off -> open Y relay s
+          // fan turned off -> open Y relays
           digitalWrite(PIN_OPEN_Y1, HIGH);
           digitalWrite(PIN_OPEN_Y2, HIGH);
         }
