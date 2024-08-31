@@ -5,6 +5,8 @@
 #include <stdint.h>
 
 extern bool wifiEnabled;
+extern u32  pwrPulses;
+extern u32  inPwrPulses;
 
 #define USE_SERIAL
 // #define USE_TELNET  // includes SERIAL

@@ -17,7 +17,11 @@ u8 ledInPinGpios[] = {
   PIN_IN_PWR
 };
 
-#define FAN_PIN_IDX  4
+#define Y1_PIN_IDX  0
+#define Y1D_PIN_IDX 1
+#define Y2_PIN_IDX  2
+#define Y2D_PIN_IDX 3
+#define FAN_PIN_IDX 4
 
 u8 ledOutPinGpios[sizeof ledInPinGpios] = {
   PIN_LED_Y1 ,
@@ -69,11 +73,11 @@ void sendPinVals(bool forceAll) {
   wsSendMsg(json);
 }
 
-u32 lastPwrFallMs = 0;
+u32 lastPwrFallTime = 0;
 
 void IRAM_ATTR handlePowerPinFall() {
   detachInterrupt(PIN_IN_PWR);
-  lastPwrFallMs = millis();
+  lastPwrFallTime = millis();
 }
 
 bool wifiLedPulsing = false;
@@ -133,55 +137,90 @@ void pinIoLoop() {
   static u32  fanOnTime        = 0;
   static bool waitingForYDelay = false;
   static bool wsWasConnected   = false;
-
   u32 now = millis();
-  if(lastPwrFallMs &&
-      (now - lastPwrFallMs) > DEBOUNCE_DELAY_MS) {
-    lastPwrFallMs = 0;
 
-    // power fall debounced, arm interrupt for next fall
-    attachInterrupt(
-      PIN_IN_PWR, handlePowerPinFall, FALLING); 
+  if(lastPwrFallTime) {
+    // start of power pulse
 
-    // inside power pulse, all pin inputs valid
-    bool havePinChg    = false;
-    bool haveFanPinChg = false;
-    for(int pinIdx = 0; 
-        pinIdx < (sizeof ledInPinGpios);  pinIdx++) {
-      int inPinGpioNum  = ledInPinGpios[pinIdx];
-      u8  inPinLvl      = digitalRead(inPinGpioNum);
-      inPinLvls[pinIdx] = inPinLvl;
-      if (inPinLvl == outPinLvls[pinIdx]) {
-        // input pin changed
-        pinChanged[pinIdx] = true;
-        havePinChg         = true;
-        if(pinIdx == FAN_PIN_IDX) 
-          haveFanPinChg = true;
-        int outPinGpioNum  = ledOutPinGpios[pinIdx];
-        u8  outPinLvl      = !inPinLvl;
-        outPinLvls[pinIdx] = outPinLvl;
+    u32 pwrDelay = now - lastPwrFallTime;
+    if(pwrDelay > DEBOUNCE_DELAY_MS &&
+       pwrDelay < PWR_ACTV_MS) {
+
+      // all pin inputs valid, read pins asap
+      for(int pinIdx = 0; 
+              pinIdx < (sizeof ledInPinGpios);  pinIdx++)
+        inPinLvls[pinIdx] = digitalRead(ledInPinGpios[pinIdx]);
+      
+      bool havePinChg    = false;
+      bool haveFanPinChg = false;
+      u8   fanPinInLvl;
+
+      for(int pinIdx = 0; 
+              pinIdx < (sizeof ledInPinGpios);  pinIdx++) {
+        u8 inPinLvl = inPinLvls[pinIdx];
+        if (inPinLvl == outPinLvls[pinIdx]) {
+          pinChanged[pinIdx] = true;
+          havePinChg         = true;
+          if(pinIdx == FAN_PIN_IDX) {
+            haveFanPinChg = true;
+            fanPinInLvl   = inPinLvl;
+          }
+        } else 
+          pinChanged[pinIdx] = false;
+        u8 outPinLvl = !inPinLvl;
+        outPinLvls[pinIdx] = !inPinLvl;
+        
+        outPinLvls[pinIdx];
         digitalWrite(outPinGpioNum, outPinLvl);
       }
-      else pinChanged[pinIdx] = false;
-    }
-    bool wsConn    = (wifiEnabled && wsConnected());
-    bool wsConnChg = (wsConn != wsWasConnected);
-    wsWasConnected = wsConn;
 
-    if(wsConn && (wsConnChg || havePinChg))
-        sendPinVals(wsConnChg);
 
-    if(haveFanPinChg) {
-      if(!inPinLvls[FAN_PIN_IDX]) {
-        // fan turned on -> Y relay stays open
-        fanOnTime        = now;
-        waitingForYDelay = true;
-      } else {  
-        // fan turned off -> open Y relay 
-        digitalWrite(PIN_OPEN_Y1, HIGH);
-        digitalWrite(PIN_OPEN_Y2, HIGH);
+      if(outPinLvls[Y1D_PIN_IDX]) outPinLvls[Y1_PIN_IDX] = 0;
+      if(outPinLvls[Y2D_PIN_IDX]) outPinLvls[Y2_PIN_IDX] = 0;
+
+      for(int pinIdx = 0; 
+              pinIdx < (sizeof ledInPinGpios);  pinIdx++) {
+
+
+
+        u8 inPinLvl = inPinLvls[pinIdx];
+        if (inPinLvl == outPinLvls[pinIdx]) {
+          // input pin changed
+          pinChanged[pinIdx] = true;
+          havePinChg         = true;
+          if(pinIdx == FAN_PIN_IDX) 
+            haveFanPinChg = true;
+          int outPinGpioNum  = ledOutPinGpios[pinIdx];
+          u8  outPinLvl      = !inPinLvl;
+          outPinLvls[pinIdx] = outPinLvl;
+          digitalWrite(outPinGpioNum, outPinLvl);
+        }
+        else pinChanged[pinIdx] = false;
       }
+      bool wsConn    = (wifiEnabled && wsConnected());
+      bool wsConnChg = (wsConn != wsWasConnected);
+      wsWasConnected = wsConn;
+
+      if(wsConn && (wsConnChg || havePinChg))
+          sendPinVals(wsConnChg);
+
+      if(haveFanPinChg) {
+        if(!inPinLvls[FAN_PIN_IDX]) {
+          // fan turned on -> Y relay stays open
+          fanOnTime        = now;
+          waitingForYDelay = true;
+        } else {  
+          // fan turned off -> open Y relay 
+          digitalWrite(PIN_OPEN_Y1, HIGH);
+          digitalWrite(PIN_OPEN_Y2, HIGH);
+        }
+      }
+      inPwrPulses++; // inside power pulse
     }
+    // clear power pulse
+    pwrPulses++;
+    lastPwrFallTime = 0;
+    attachInterrupt(PIN_IN_PWR, handlePowerPinFall, FALLING); 
   }
   if(waitingForYDelay && ((now - fanOnTime) > yDelayMs)) {
     // Y delay timeout -> close Y relay 
