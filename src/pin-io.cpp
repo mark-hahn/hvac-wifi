@@ -62,13 +62,13 @@ void sendPinVals(bool forceAll) {
       const char* name = pinNames[pinIdx];
       u8 pinLvl        = outPinLvls[pinIdx];
       char msg[32];
-      if (pinLvl) sprintf(msg, "\"%s\":1,", name);
-      else        sprintf(msg, "\"%s\":0,", name);
+      if (pinLvl) sprintf(msg, "\"%s\":true,",  name);
+      else        sprintf(msg, "\"%s\":false,", name);
       strcat(json, msg);
     }
   }
   json[strlen(json)-1] = '}';
-  wsSendMsg(json);
+  if(wifiEnabled) wsSendMsg(json);
 }
 
 u32 lastPwrFallTime = 0;
@@ -114,6 +114,11 @@ void pinIoLoop() {
       // all pin inputs valid, read pins asap
       for(int pinIdx = 0; pinIdx < PIN_COUNT;  pinIdx++)
         inPinLvls[pinIdx] = digitalRead(inputPinGpios[pinIdx]);
+
+      if(inPinLvls[PIN_IN_PWR]) {
+        prtl("error: power pin high");
+        if(wifiEnabled) wsSendMsg("power pin high");
+      }
       
       bool havePinChg    = false;
       bool haveFanPinChg = false;
