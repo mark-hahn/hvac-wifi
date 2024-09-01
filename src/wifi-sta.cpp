@@ -111,7 +111,6 @@ void wifiSetup() {
 
   ws.onEvent(eventHandler);
   server.addHandler(&ws);
-  
   server.begin();
 
   setWifiLedPulsing(true, false);
@@ -119,23 +118,12 @@ void wifiSetup() {
 
 void wifiLoop() {
   static bool oldWsConnCnt = 0;
+  static u32 lastDotTime = 0;
+  bool now = millis();
+
   ws.cleanupClients();
 
-  static u32 lastMillis = 0;
-  if (WiFi.status() != WL_CONNECTED) {
-    if(wifiConnected) {
-      wifiConnected = false;
-      prtl();
-      prtl("Disconnected from WiFi");
-      WiFi.begin(ssid, password);
-      setWifiLedPulsing(true, false);
-    }
-    if ((millis() - lastMillis) > 1000) {
-      prt(".");
-      lastMillis = millis();
-    }
-  }
-  else {
+  if (WiFi.status() == WL_CONNECTED) {
     if(!wifiConnected) {
       wifiConnected = true;
       prtf("Connected to WiFi: %s, ", WiFi.localIP());
@@ -143,8 +131,21 @@ void wifiLoop() {
       setWifiLedPulsing(false, false);
     }
   }
+  else {
+    if(wifiConnected) {
+      wifiConnected = false;
+      prtl();
+      prtl("Disconnected from WiFi");
+      WiFi.begin(ssid, password);
+      setWifiLedPulsing(true, false);
+    }
+    if ((now - lastDotTime) > 1000) {
+      prt(".");
+      lastDotTime = now;
+    }
+  }
 
-  int wsConnCnt = wsConnCount();
+  int wsConnCnt = ws.count();
   if(wsConnCnt != oldWsConnCnt) {
     prtfl("new wsConnCnt: %d", wsConnCnt);
     oldWsConnCnt = wsConnCnt;
@@ -152,13 +153,12 @@ void wifiLoop() {
   }
 
   static u32 lastPingTime = 0;
-  if ((millis() - lastPingTime) > PING_INTERVAL) {
-    if(wsConnCount()) {
+  if ((now - lastPingTime) > PING_INTERVAL) {
+    if(ws.count()) {
       prtl("pinging all");
       wsSendMsg((const char*) "ping");
-      // ws.pingAll((u8*) "x", 1);
     }
-    lastPingTime = millis();
+    lastPingTime = now;
   }
 
   checkWifiLed();
