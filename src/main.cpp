@@ -13,6 +13,7 @@ void setup() {
   prtl("\n\nStarting...");
 #endif
 
+  pinMode(PIN_ENBL_WIFI, INPUT);
   wifiEnabled = !digitalRead(PIN_ENBL_WIFI);
 
   if(wifiEnabled) wifiSetup();
