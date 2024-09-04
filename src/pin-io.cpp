@@ -198,7 +198,7 @@ void pinIoLoop() {
   if((now - lastPwrPulseTime) > POWER_LOSS_TIMEOUT) {
     lastPwrPulseTime = now;
     for(int pinIdx = 0; pinIdx < PIN_COUNT;  pinIdx++) {
-      ledOutGpios[pinIdx] = 0;
+      outPinLvls[pinIdx] = 0;
       digitalWrite(ledOutGpios[pinIdx], LOW);
     }
   }
