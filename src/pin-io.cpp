@@ -6,7 +6,7 @@
 #include "pins.h"
 #include "pin-io.h"
 
-u8 inputPinGpios[] = {
+u8 inputGpios[] = {
   PIN_IN_Y1 ,   
   PIN_IN_Y1D,   
   PIN_IN_Y2 ,   
@@ -22,9 +22,10 @@ u8 inputPinGpios[] = {
 #define Y2_PIN_IDX  2
 #define Y2D_PIN_IDX 3
 #define FAN_PIN_IDX 4
-#define PIN_COUNT (sizeof inputPinGpios)
+#define PWR_PIN_IDX 7
+#define PIN_COUNT (sizeof inputGpios)
 
-u8 ledOutPinGpios[PIN_COUNT] = {
+u8 ledOutGpios[PIN_COUNT] = {
   PIN_LED_Y1 ,
   PIN_LED_Y1D,
   PIN_LED_Y2 ,
@@ -71,6 +72,7 @@ void sendPinVals(bool forceAll) {
   if(wifiEnabled) wsSendMsg(json);
 }
 
+u32 lastPwrPulseTime;
 u32 lastPwrFallTime = 0;
 
 void IRAM_ATTR handlePowerPinFall() {
@@ -78,10 +80,11 @@ void IRAM_ATTR handlePowerPinFall() {
   lastPwrFallTime = millis();
 }
 
+
 void pinIoSetup() {
   for(int pinIdx = 0; pinIdx < PIN_COUNT;  pinIdx++) {
-    pinMode(inputPinGpios[pinIdx], INPUT);
-    int gpioNum = ledOutPinGpios[pinIdx];
+    pinMode(inputGpios[pinIdx], INPUT);
+    int gpioNum = ledOutGpios[pinIdx];
     pinMode(gpioNum, OUTPUT);
     digitalWrite(gpioNum, LOW);
   }
@@ -93,8 +96,9 @@ void pinIoSetup() {
   digitalWrite(PIN_LED_WIFI, LOW);
   digitalWrite(PIN_OPEN_Y1,  LOW);
   digitalWrite(PIN_OPEN_Y2,  LOW);
-
   attachInterrupt(PIN_IN_PWR, handlePowerPinFall, FALLING);  
+
+  lastPwrPulseTime = millis();
 }
 
 void pinIoLoop() {
@@ -106,14 +110,16 @@ void pinIoLoop() {
   u32 pwrDelay = now - lastPwrFallTime;
   if(lastPwrFallTime && pwrDelay >= DEBOUNCE_DELAY_MS) {
     static u32 lastPwrErrorTime = 0;
+    lastPwrPulseTime = now;
 
     // interrupt happened, inside power pulse?
     if(pwrDelay <= MAX_SAMPLE_DELAY) {
       // all pin inputs valid, read pins asap
       for(int pinIdx = 0; pinIdx < PIN_COUNT;  pinIdx++)
-        inPinLvls[pinIdx] = digitalRead(inputPinGpios[pinIdx]);
+        inPinLvls[pinIdx] = digitalRead(inputGpios[pinIdx]);
 
-      if(inPinLvls[PIN_IN_PWR] && 
+      // power pin high sanity check
+      if(inPinLvls[PWR_PIN_IDX] && 
           (now - lastPwrErrorTime) > 15000) {
         prtl("error: power pin high");
         if(wifiEnabled) wsSendMsg("error: power pin high");
@@ -144,7 +150,7 @@ void pinIoLoop() {
         // digitalWrite all out pins
         for(int pinIdx = 0; pinIdx < PIN_COUNT;  pinIdx++) {
           u8 inPinLvl = inPinLvls[pinIdx];
-          int gpioNum     = ledOutPinGpios[pinIdx];
+          int gpioNum     = ledOutGpios[pinIdx];
           u8  outPinLvl   = outPinLvls[pinIdx];
           u8  outWriteVal = outPinLvl;
           if(pinIdx == Y1_PIN_IDX && outPinLvl && 
@@ -187,5 +193,13 @@ void pinIoLoop() {
     waitingForYDelay = false;
     digitalWrite(PIN_OPEN_Y1, LOW);
     digitalWrite(PIN_OPEN_Y2, LOW);
+  }
+
+  if((now - lastPwrPulseTime) > POWER_LOSS_TIMEOUT) {
+    lastPwrPulseTime = now;
+    for(int pinIdx = 0; pinIdx < PIN_COUNT;  pinIdx++) {
+      ledOutGpios[pinIdx] = 0;
+      digitalWrite(ledOutGpios[pinIdx], LOW);
+    }
   }
 }
