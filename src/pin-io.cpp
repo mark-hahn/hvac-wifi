@@ -101,25 +101,26 @@ void pinIoLoop() {
   static u32  fanOnTime        = 0;
   static bool waitingForYDelay = false;
   static bool wsWasConnected   = false;
-
   u32 now = millis();
 
-  if(lastPwrFallTime) {
-    // interrupt happened, start of power pulse
+  u32 pwrDelay = now - lastPwrFallTime;
+  if(lastPwrFallTime && pwrDelay >= DEBOUNCE_DELAY_MS) {
+    static u32 lastPwrErrorTime = 0;
 
-    u32 pwrDelay = now - lastPwrFallTime;
-    if(pwrDelay > DEBOUNCE_DELAY_MS &&
-       pwrDelay < PWR_ACTV_MS) {
-
+    // interrupt happened, inside power pulse?
+    if(pwrDelay <= MAX_SAMPLE_DELAY) {
       // all pin inputs valid, read pins asap
       for(int pinIdx = 0; pinIdx < PIN_COUNT;  pinIdx++)
         inPinLvls[pinIdx] = digitalRead(inputPinGpios[pinIdx]);
 
-      if(inPinLvls[PIN_IN_PWR]) {
+      if(inPinLvls[PIN_IN_PWR] && 
+          (now - lastPwrErrorTime) > 15000) {
         prtl("error: power pin high");
         if(wifiEnabled) wsSendMsg("error: power pin high");
+        lastPwrErrorTime = now;
       }
-      else {
+      else { 
+        // power pulse is valid
         bool havePinChg    = false;
         bool haveFanPinChg = false;
         u8   fanPinInLvl;
@@ -175,10 +176,8 @@ void pinIoLoop() {
             digitalWrite(PIN_OPEN_Y2, HIGH);
           }
         }
-        inPwrPulses++; // inside power pulse
       }
     }
-    pwrPulses++;
     lastPwrFallTime = 0;
     attachInterrupt(PIN_IN_PWR, handlePowerPinFall, FALLING); 
   }

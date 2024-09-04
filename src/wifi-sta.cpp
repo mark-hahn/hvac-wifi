@@ -126,7 +126,8 @@ void wifiLoop() {
   if (WiFi.status() == WL_CONNECTED) {
     if(!wifiConnected) {
       wifiConnected = true;
-      prtf("Connected to WiFi: %s, ", WiFi.localIP());
+      prt("Connected to WiFi: ");
+      prtl(WiFi.localIP());
       printMacAddr();
       setWifiLedPulsing(false, false);
     }
