@@ -105,25 +105,25 @@ void pinIoLoop() {
   static u32  fanOnTime        = 0;
   static bool waitingForYDelay = false;
   static bool wsWasConnected   = false;
-  u32 now = millis();
+  u32 time = millis();
 
-  u32 pwrDelay = now - lastPwrFallTime;
-  if(lastPwrFallTime && pwrDelay >= DEBOUNCE_DELAY_MS) {
+  u32 pwrDelayMs = time - lastPwrFallTime;
+  if(lastPwrFallTime && pwrDelayMs >= DEBOUNCE_DELAY_MS) {
     static u32 lastPwrErrorTime = 0;
-    lastPwrPulseTime = now;
+    lastPwrPulseTime = time;
 
     // interrupt happened, inside power pulse?
-    if(pwrDelay <= MAX_SAMPLE_DELAY) {
+    if(pwrDelayMs <= MAX_SAMPLE_DELAY) {
       // all pin inputs valid, read pins asap
       for(int pinIdx = 0; pinIdx < PIN_COUNT;  pinIdx++)
         inPinLvls[pinIdx] = digitalRead(inputGpios[pinIdx]);
 
       // power pin high sanity check
       if(inPinLvls[PWR_PIN_IDX] && 
-          (now - lastPwrErrorTime) > 15000) {
+          (time - lastPwrErrorTime) > MAX_PWR_ERR_REPEAT) {
         prtl("error: power pin high");
         if(wifiEnabled) wsSendMsg("error: power pin high");
-        lastPwrErrorTime = now;
+        lastPwrErrorTime = time;
       }
       else { 
         // power pulse is valid
@@ -174,7 +174,7 @@ void pinIoLoop() {
         if(haveFanPinChg) {
           if(!fanPinInLvl) {
             // fan turned on -> Y relays stay open
-            fanOnTime        = now;
+            fanOnTime        = time;
             waitingForYDelay = true;
           } else {  
             // fan turned off -> open Y relays
@@ -188,15 +188,15 @@ void pinIoLoop() {
     attachInterrupt(PIN_IN_PWR, handlePowerPinFall, FALLING); 
   }
   
-  if(waitingForYDelay && ((now - fanOnTime) > yDelayMs)) {
+  if(waitingForYDelay && ((time - fanOnTime) > yDelayMs)) {
     // Y delay timeout -> close Y relays
     waitingForYDelay = false;
     digitalWrite(PIN_OPEN_Y1, LOW);
     digitalWrite(PIN_OPEN_Y2, LOW);
   }
 
-  if((now - lastPwrPulseTime) > POWER_LOSS_TIMEOUT) {
-    lastPwrPulseTime = now;
+  if((time - lastPwrPulseTime) > POWER_LOSS_TIMEOUT) {
+    lastPwrPulseTime = time;
     for(int pinIdx = 0; pinIdx < PIN_COUNT;  pinIdx++) {
       outPinLvls[pinIdx] = 0;
       digitalWrite(ledOutGpios[pinIdx], LOW);

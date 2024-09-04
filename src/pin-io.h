@@ -7,6 +7,7 @@
 #define DEFAULT_YDELAY_MS 15000
 #define WIFI_LED_PULSE_MS 250
 
+#define MAX_PWR_ERR_REPEAT 20000
 #define POWER_LOSS_TIMEOUT 500
 
 extern int yDelayMs;

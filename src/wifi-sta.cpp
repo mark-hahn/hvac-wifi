@@ -37,9 +37,9 @@ void setWifiLedPulsing(bool pulsing, bool once) {
 
 void checkWifiLed() {
   if(!wifiLedPulsing) return;
-  u32 now = millis();
-  if((now - wifiLedChgTime) > WIFI_LED_PULSE_MS) {
-    wifiLedChgTime = now;
+  u32 time = millis();
+  if((time - wifiLedChgTime) > WIFI_LED_PULSE_MS) {
+    wifiLedChgTime = time;
     wifiLedOn      = !wifiLedOn;
     digitalWrite(PIN_LED_WIFI, wifiLedOn);
     if(wifiLedOnce && wifiLedOn)
@@ -119,7 +119,7 @@ void wifiSetup() {
 void wifiLoop() {
   static bool oldWsConnCnt = 0;
   static u32 lastDotTime = 0;
-  bool now = millis();
+  bool time = millis();
 
   ws.cleanupClients();
 
@@ -140,9 +140,9 @@ void wifiLoop() {
       WiFi.begin(ssid, password);
       setWifiLedPulsing(true, false);
     }
-    if ((now - lastDotTime) > 1000) {
+    if ((time - lastDotTime) > 1000) {
       prt(".");
-      lastDotTime = now;
+      lastDotTime = time;
     }
   }
 
@@ -154,12 +154,12 @@ void wifiLoop() {
   }
 
   static u32 lastPingTime = 0;
-  if ((now - lastPingTime) > PING_INTERVAL) {
+  if ((time - lastPingTime) > PING_INTERVAL) {
     if(ws.count()) {
       prtl("pinging all");
       wsSendMsg((const char*) "ping");
     }
-    lastPingTime = now;
+    lastPingTime = time;
   }
 
   checkWifiLed();
