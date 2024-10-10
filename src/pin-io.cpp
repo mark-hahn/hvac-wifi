@@ -94,7 +94,9 @@ void pinIoSetup() {
   pinMode(PIN_OPEN_Y2,   OUTPUT);  
 
   digitalWrite(PIN_LED_WIFI, LOW);
-  digitalWrite(PIN_OPEN_Y1,  LOW);
+
+  digitalWrite(PIN_OPEN_Y1,  HIGH); // y1 always open
+
   digitalWrite(PIN_OPEN_Y2,  LOW);
   attachInterrupt(PIN_IN_PWR, handlePowerPinFall, FALLING);  
 
@@ -178,10 +180,7 @@ void pinIoLoop() {
             waitingForYDelay = true;
           } else {  
             // fan turned off -> open Y relays
-
-            // Y1 is always closed
-            // digitalWrite(PIN_OPEN_Y1, HIGH);
-            
+            digitalWrite(PIN_OPEN_Y1, HIGH);
             digitalWrite(PIN_OPEN_Y2, HIGH);
           }
         }
@@ -194,7 +193,7 @@ void pinIoLoop() {
   if(waitingForYDelay && ((time - fanOnTime) > yDelayMs)) {
     // Y delay timeout -> close Y relays
     waitingForYDelay = false;
-    digitalWrite(PIN_OPEN_Y1, LOW);
+    // digitalWrite(PIN_OPEN_Y1, LOW);  y1 stays open
     digitalWrite(PIN_OPEN_Y2, LOW);
   }
 
