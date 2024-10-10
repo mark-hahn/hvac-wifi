@@ -178,7 +178,10 @@ void pinIoLoop() {
             waitingForYDelay = true;
           } else {  
             // fan turned off -> open Y relays
-            digitalWrite(PIN_OPEN_Y1, HIGH);
+
+            // Y1 is always closed
+            // digitalWrite(PIN_OPEN_Y1, HIGH);
+            
             digitalWrite(PIN_OPEN_Y2, HIGH);
           }
         }
