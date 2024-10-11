@@ -193,7 +193,8 @@ void pinIoLoop() {
   if(waitingForYDelay && ((time - fanOnTime) > yDelayMs)) {
     // Y delay timeout -> close Y relays
     waitingForYDelay = false;
-    // digitalWrite(PIN_OPEN_Y1, LOW);  y1 stays open
+    if(!disableY1d) // keep Y1D relay open permanently?
+      digitalWrite(PIN_OPEN_Y1, LOW); 
     digitalWrite(PIN_OPEN_Y2, LOW);
   }
 

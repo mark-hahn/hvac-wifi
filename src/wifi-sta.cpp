@@ -9,6 +9,7 @@
 #include "wifi-sta.h"
 
 bool wifiConnected = false;
+bool disableY1d    = false;
 
 char ssid[]     = DEF_SSID;
 char password[] = DEF_PASSWORD;
@@ -74,6 +75,8 @@ void wsRecvMsg(void *arg, u8 *data, size_t len) {
     if (!strcmp(msg, "query")) 
       // query cmd sends all pin vals
       sendPinVals(true);
+    else if (!strcmp(msg, "disableY1d")) 
+      disableY1d = true;
     else if(msg[0] >= '0' && msg[0] <= '9') 
       // numerical messages are delay in ms
       yDelayMs = atoi(msg);
